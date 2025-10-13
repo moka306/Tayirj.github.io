@@ -944,7 +944,7 @@
                     await db.collection('users').doc(user.uid).set({
                         ...formData,
                         uid: user.uid,
-                        currentBalance: 50,
+                        currentBalance: 0,
                         referralCode: user.uid.substring(0, 8).toUpperCase(),
                         hasPublishedAd: false, // ✅ إضافة جديدة
                         createdAt: firebase.firestore.FieldValue.serverTimestamp()
