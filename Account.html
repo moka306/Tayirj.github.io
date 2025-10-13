@@ -2075,8 +2075,8 @@
                     <div class="gold-icon">
                         <i class="fas fa-coins"></i>
                     </div>
-                    <div class="point-amount">100 نقطة</div>
-                    <div class="point-price">20 الف جنيه سوداني</div>
+                    <div class="point-amount">10 نقطة</div>
+                    <div class="point-price">5 الف جنيه سوداني</div>
                     <div class="point-price-value" data-price="40" style="display:none;">40 ريال</div>
                     <div class="point-actions">
                         <button class="point-btn buy-btn">شراء</button>
@@ -2089,8 +2089,8 @@
                     <div class="gold-icon">
                         <i class="fas fa-crown"></i>
                     </div>
-                    <div class="point-amount">250 نقطة</div>
-                    <div class="point-price">30 الف جنيه سوداني</div>
+                    <div class="point-amount">50 نقطة</div>
+                    <div class="point-price">25 الف جنيه سوداني</div>
                     <div class="point-actions">
                         <button class="point-btn buy-btn">شراء</button>
                         <button class="point-btn sell-btn">بيع</button>
@@ -2102,8 +2102,8 @@
                     <div class="gold-icon">
                         <i class="fas fa-gem"></i>
                     </div>
-                    <div class="point-amount">500 نقطة</div>
-                    <div class="point-price">35 الف جنيه سوداني</div>
+                    <div class="point-amount">100 نقطة</div>
+                    <div class="point-price">50 الف جنيه سوداني</div>
                     <div class="point-actions">
                         <button class="point-btn buy-btn">شراء</button>
                         <button class="point-btn sell-btn">بيع</button>
@@ -2115,8 +2115,8 @@
                     <div class="gold-icon">
                         <i class="fas fa-medal"></i>
                     </div>
-                    <div class="point-amount">1000 نقطة</div>
-                    <div class="point-price">45 الف جنيه سوداني</div>
+                    <div class="point-amount">500 نقطة</div>
+                    <div class="point-price">100 الف جنيه سوداني</div>
                     <div class="point-actions">
                         <button class="point-btn buy-btn">شراء</button>
                         <button class="point-btn sell-btn">بيع</button>
@@ -2260,7 +2260,7 @@
             <!-- نص التحاويل عبر البنك -->
             <div class="points-price" id="enhancedPointsModalPrice">جميع التحاويل عبر تطبيق بنكك (بنك الخرطوم)</div>
             <!-- أيقونة البنك في المنتصف -->
-            <div style="width: 50px; height: 50px; border-radius: 8px; background: url('file:///E:/download/bankk.png') center/cover; border: 2px solid #ddd; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin: 8px auto;"></div>
+            <div style="width: 50px; height: 50px; border-radius: 8px; background: url('images/bankk.png') center/cover; border: 2px solid #ddd; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin: 8px auto;"></div>
             
         </div>
 
@@ -2395,6 +2395,13 @@
                 }
             }
         }
+        document.getElementById('purchasePointsBtn').addEventListener('click', function() {
+            // التمرير السلس إلى قسم النقاط الذهبية
+            document.querySelector('.points-sheet').scrollIntoView({ 
+                behavior: 'smooth',
+                block: 'start'
+            });
+        });
 
         // ============ نظام مراقبة الإشعارات الجديدة ============
         function listenToUserNotifications() {
@@ -2723,7 +2730,7 @@
 
                 <div class="note-box">
                     <i class="fas fa-info-circle"></i>
-                    <span>سيتم إضافة النقاط إلى حسابك بعد التأكد من التحويل خلال 24 ساعة</span>
+                    <span>سيتم إضافة النقاط إلى حسابك بعد التأكد من تحويلك للمبلغ المطلوب مقابل النقاط إلى رقم الحساب اعلاه .</span>
                 </div>
 
                 <div class="action-buttons">
@@ -2938,7 +2945,7 @@
 
                 <div class="note-box">
                     <i class="fas fa-info-circle"></i>
-                    <span>سيتم تحويل المبلغ إلى حسابك بعد التأكد من البيانات خلال 24 ساعة</span>
+                    <span>سيقوم فريقنا بتحويل مبلغ ${price} إلي حسابك إذا تم التأكد من عدد نقاط المتوفره لديك مقابل المبلغ كما هو مذكور في بطاقات الشراء .</span>
                 </div>
 
                 <div class="action-buttons" style="margin-top: 25px;">

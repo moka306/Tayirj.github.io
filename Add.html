@@ -788,6 +788,17 @@
                 padding: 10px 10px; /* تقليل الحشو */
                 font-size: 13px; /* إضافة حجم خط أصغر */
             }
+            .error-message {
+                padding: 8px 15px;
+                font-size: 13px;
+                max-width: 90%;
+                left: 50%;
+                transform: translateX(-50%);
+            }
+            
+            .error-message i {
+                font-size: 1.1rem;
+            }
             .image-previews {
                 grid-template-columns: 1fr;
             }
@@ -2782,7 +2793,7 @@
                     const currentBalance = userData.currentBalance || 0;
 
                     if (currentBalance < 10) {
-                        showError('رصيدك من النقاط غير كافٍ. تحتاج إلى 10 نقاط لنشر الإعلان');
+                        showError('رصيدك من النقاط غير كافٍ. تحتاج إلى 10 نقاط لنشر الإعلان انتقل الي صفحة حسابي لشراء نقاط ذهبية');
                         return;
                     }
                 } catch (error) {
@@ -2912,12 +2923,15 @@
                 }
 
                 // ✅ خصم النقاط فقط عند النشر لإعلان جديد (وليس التعديل)
+                // ✅ خصم النقاط وتحديث حالة النشر عند النشر لإعلان جديد (وليس التعديل)
                 if (isPublish && !isEditMode && userDoc && userData) {
                     try {
                         await db.collection("users").doc(userDoc.id).update({
-                            currentBalance: firebase.firestore.FieldValue.increment(-10)
+                            currentBalance: firebase.firestore.FieldValue.increment(-10),
+                            hasPublishedAd: true  // ✅ هذا هو المكان الصحيح
                         });
                         console.log("✅ تم خصم 10 نقاط من رصيد المستخدم");
+                        console.log("✅ تم تحديث hasPublishedAd إلى true");
                     } catch (error) {
                         console.error("❌ خطأ في خصم النقاط:", error);
                     }
@@ -2971,7 +2985,7 @@
                     
                     // الانتقال إلى صفحة الإعلانات بعد ثانيتين
                     setTimeout(() => {
-                        window.location.href = 'ads.html';
+                        window.location.href = 'index.html';
                     }, 2000);
                     
                 } else {

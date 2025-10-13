@@ -15,7 +15,7 @@
     <meta property="og:image" content="https://clever-meerkat-4782ea.netlify.app/competition-image.jpg">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
-    <meta property="og:url" content="https://clever-meerkat-4782ea.netlify.app/chat.html">
+    <meta property="og:url" content="https://clever-meerkat-4782ea.netlify.app/index.html">
     <meta property="og:type" content="website">
     <meta property="fb:app_id" content="ضع_معرف_التطبيق_هنا">
     <style>
@@ -360,6 +360,25 @@
             z-index: -1;
             animation: borderGlow 3s linear infinite;
         }
+        /* مربع تحذيري لعدم وجود إعلان */
+        .no-ad-warning {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            line-height: 1.8;
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+            margin-bottom: 20px;
+        }
+
+        .no-ad-warning i {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            display: block;
+        }
         .conversation-item:hover {
             background: #e6f0ff;
         }
@@ -490,6 +509,41 @@
             color: #1a2a6c;
             cursor: pointer;
         }
+        .loading-spinner {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 60px 20px;
+            color: #667eea;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(102, 126, 234, 0.2);
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            margin-top: 15px;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .loading-subtext {
+            margin-top: 5px;
+            font-size: 0.85rem;
+            color: #888;
+        }
+
         
         .messages-container {
             flex: 1;
@@ -1147,6 +1201,19 @@
         }
         
         @media (max-width: 480px) {
+
+            .no-ad-warning {
+                padding: 12px;
+                font-size: 0.85rem;
+                line-height: 1.5;
+                border-radius: 10px;
+                margin-bottom: 15px;
+            }
+            
+            .no-ad-warning i {
+                font-size: 1.3rem;
+                margin-bottom: 6px;
+            }
             .details-progress-circle {
                 width: 60px;
                 height: 60px;
@@ -1285,6 +1352,23 @@
                 font-size: 1.4rem;
                 margin-top: 15px;
             }
+            .loading-spinner {
+                padding: 40px 20px;
+            }
+            
+            .spinner {
+                width: 40px;
+                height: 40px;
+                border-width: 3px;
+            }
+            
+            .loading-text {
+                font-size: 0.9rem;
+            }
+            
+            .loading-subtext {
+                font-size: 0.8rem;
+            }
             
             .conversation-item {
                 margin-bottom: 5px;
@@ -1307,6 +1391,12 @@
                 margin: 0;
                 padding: 0;
                 
+            }
+
+            
+            /* تحريك div الرئيسي للمحتوى السفلي */
+            [style*="position: absolute"][style*="bottom: 0"][style*="right: 20px"] {
+                right: -10px !important; /* زيادة المسافة من اليمين */
             }
             
             
@@ -1861,6 +1951,7 @@
         
         // تهيئة الصفحة
         document.addEventListener('DOMContentLoaded', function() {
+            
             const mainweb = document.getElementById('mainweb');
             const competitions = document.getElementById('bottomNavCompetitions');
             const notifications = document.getElementById('bottomNavNotifications');
@@ -1898,6 +1989,7 @@
             // إضافة هذا القسم
             firebase.auth().onAuthStateChanged((user) => {
                 if (user) {
+                    
                     loadUserNotifications(); // ✅ لتحميل الإشعارات مرة واحدة
                     listenToNotificationsUpdates(); // ✅ للاستماع للتحديثات الفورية
                     loadGlobalChat();
@@ -1946,12 +2038,19 @@
         
         // تحميل المحادثات العامة من Firebase
         function loadGlobalChat() {
-            conversationsList.innerHTML = '';
+            // ✅ إظهار أيقونة التحميل
+            conversationsList.innerHTML = `
+                <div class="loading-spinner">
+                    <div class="spinner"></div>
+                    <div class="loading-text">جاري تحميل المسابقات...</div>
+                    <div class="loading-subtext">يرجى الانتظار قليلاً</div>
+                </div>
+            `;
             
             db.collection('global_chat')
             .orderBy('timestamp', 'desc')
-            .onSnapshot(async snapshot => {  // ⬅️ أضف async هنا
-                conversationsList.innerHTML = '';
+            .onSnapshot(async snapshot => {
+                conversationsList.innerHTML = ''; // ✅ إزالة أيقونة التحميل
                 globalMessages = [];
                 unreadMessages = [];
                 
@@ -1967,32 +2066,33 @@
                     return;
                 }
                 
-                // ⬇️ أضف هذا السطر هنا
                 const currentUser = firebase.auth().currentUser;
                 
-                // الحصول على بيانات المستخدم مرة واحدة
+                // ✅ جلب بيانات المستخدم مرة واحدة فقط في البداية
                 let userData = null;
                 if (currentUser) {
                     try {
                         const userDoc = await db.collection('users').doc(currentUser.uid).get();
                         if (userDoc.exists) {
                             userData = userDoc.data();
-                            console.log('✅ بيانات المستخدم في loadGlobalChat:', userData); // للتشخيص
+                            console.log('✅ بيانات المستخدم في loadGlobalChat:', userData);
                         }
                     } catch (error) {
                         console.error('خطأ في جلب بيانات المستخدم:', error);
                     }
                 }
                 
+                // ✅ استخدام Fragment لتحسين الأداء
+                const fragment = document.createDocumentFragment();
+                
                 snapshot.forEach(doc => {
                     const docData = doc.data();
                     const message = {
                         ...docData,
-                        id: doc.id  // ✅ ضع id في النهاية لضمان عدم استبداله
+                        id: doc.id
                     };
                     cachedCompetitions[message.id] = message;
                     
-                    // التحقق إذا كانت الرسالة غير مقروءة
                     const readMessages = JSON.parse(localStorage.getItem('readMessages')) || [];
                     if (!readMessages.includes(message.id) && message.type === 'admin_message') {
                         unreadMessages.push(message.id);
@@ -2002,7 +2102,6 @@
                     conversationItem.className = 'conversation-item';
                     conversationItem.setAttribute('data-id', doc.id);
                     
-                    // تحديد أيقونة المرسل
                     let avatarContent = '';
                     let senderName = '';
                     
@@ -2014,24 +2113,19 @@
                         senderName = message.senderName || 'مستخدم';
                     }
                     
-                    // إضافة علامة الرسائل غير المقروءة
                     const unreadIndicator = !readMessages.includes(message.id) && message.type === 'admin_message' ? 
                         '<div class="conversation-unread"></div>' : '';
                     
-                    // ⬇️ أضف هذا الجزء هنا - حساب نسبة الاكتمال
+                    // ✅ استخدام البيانات المحفوظة بدلاً من جلبها مجدداً
                     let displayPercentage = 0;
-                    // حساب النسبة بناءً على البيانات المحفوظة
                     if (userData && userData.competitions && userData.competitions[message.id]) {
                         const competitionData = userData.competitions[message.id];
-                        
-                        // إذا كانت النسبة محفوظة، استخدمها
                         if (competitionData.percentage !== undefined) {
                             displayPercentage = competitionData.percentage;
                         } else {
-                            // وإلا، احسبها من عدد الإحالات الناجحة
                             const successfulRefs = competitionData.successfulReferrals || [];
                             const successCount = successfulRefs.filter(r => r.status === 'success').length;
-                            const totalRequired = 10; // يمكن تغييره
+                            const totalRequired = 10;
                             displayPercentage = Math.round((successCount / totalRequired) * 100);
                         }
                     }
@@ -2039,7 +2133,6 @@
                     const completionPercentage = displayPercentage;
                     const strokeDashoffset = 145 - (145 * completionPercentage / 100);
 
-                    // تحديد الصورة
                     let imageHtml = '';
                     if (message.attachment && message.attachment.type.startsWith('image/')) {
                         imageHtml = `<img src="${message.attachment.url}" style="width: 100%; height: 100%; object-fit: cover; display: block; position: absolute; top: 0; left: 0;">`;
@@ -2066,12 +2159,10 @@
                     }
 
                     conversationItem.innerHTML = `
-                    <div style="position: relative; overflow: hidden; border-radius: 20px; height: 200px; width: 100%;">
+                        <div style="position: relative; overflow: hidden; border-radius: 20px; height: 200px; width: 100%;">
                             <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; transform: scale(1); transform-origin: center;">
                                 ${imageHtml}
                             </div>
-                            
-                            <!-- تم حذف طبقة التعتيم بالكامل -->
                             
                             <div style="position: absolute; bottom: 0; right: 20px; padding: 15px; z-index: 2; max-width: 70%;">
                                 <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
@@ -2094,7 +2185,6 @@
                                     </div>
                                 </div>
                                 
-                                
                                 <p style="color: white; font-size: 0.95rem; line-height: 1.6; margin-bottom: 10px; text-shadow: 0 2px 15px rgba(0,0,0,1), 0 0 10px rgba(0,0,0,0.8); overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">${message.message}</p>
                                 <div style="color: rgba(255,255,255,0.9); font-size: 0.8rem; text-shadow: 0 2px 10px rgba(0,0,0,1), 0 0 8px rgba(0,0,0,0.8);">${formatTime(message.timestamp?.toDate())}</div>
                             </div>
@@ -2107,8 +2197,11 @@
                         toggleCardExpansion(conversationItem, message);
                     });
                     
-                    conversationsList.appendChild(conversationItem);
+                    fragment.appendChild(conversationItem);
                 });
+                
+                // ✅ إضافة جميع البطاقات دفعة واحدة
+                conversationsList.appendChild(fragment);
                 
                 updateChatBadge();
             }, error => {
@@ -2151,7 +2244,7 @@
             if (!isExpanded) {
                 const currentUser = firebase.auth().currentUser;
                 
-                // ✅ تحقق من وجود المسابقة في global_chat أولاً
+                // ✅ التحقق من وجود المسابقة في global_chat أولاً
                 console.log('🔍 التحقق من المسابقة:', message.id);
                 
                 try {
@@ -2172,13 +2265,17 @@
                 
                 // الحصول على نسبة الاكتمال من بيانات المستخدم
                 let displayPercentage = 0;
+                let hasPublishedAd = false; // ✅ متغير جديد للتحقق من نشر إعلان
+                
                 if (currentUser) {
                     try {
                         const userDoc = await db.collection('users').doc(currentUser.uid).get();
                         if (userDoc.exists) {
                             const userData = userDoc.data();
                             displayPercentage = userData.competitions?.[message.id]?.percentage || 0;
+                            hasPublishedAd = userData.hasPublishedAd || false; // ✅ التحقق من نشر إعلان
                             console.log('✅ نسبة الاكتمال:', displayPercentage);
+                            console.log('✅ هل نشر إعلان:', hasPublishedAd);
                         }
                     } catch (error) {
                         console.error('خطأ في جلب نسبة الاكتمال:', error);
@@ -2194,6 +2291,34 @@
                 if (!detailsDiv) {
                     detailsDiv = document.createElement('div');
                     detailsDiv.className = 'conversation-details';
+                    
+                    // ✅ تحديد محتوى قسم الإحالة بناءً على hasPublishedAd
+                    let referralSectionHTML = '';
+                    
+                    if (hasPublishedAd) {
+                        // ✅ إذا نشر إعلان: عرض الرابط وزر المشاركة
+                        referralSectionHTML = `
+                            <div class="referral-link-container">
+                                <div class="referral-link-title">
+                                    <i class="fas fa-share-alt"></i> شارك رابط الإحالة مع أصدقائك
+                                </div>
+                                <div class="referral-link-box">
+                                    <input type="text" class="referral-link-input" id="referralLink${message.id}" readonly value="جاري التحميل...">
+                                    <button class="copy-link-btn" onclick="copyReferralLink('${message.id}', event)">
+                                        <i class="fab fa-whatsapp"></i> مشاركة
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        // ✅ إذا لم ينشر إعلان: عرض الرسالة التحذيرية
+                        referralSectionHTML = `
+                            <div class="no-ad-warning">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <div>أضف إعلان أولاً ليتم إنشاء رابط المشاركة لك لتشاركه مع أصدقائك وتبدأ رحلة كسب المال</div>
+                            </div>
+                        `;
+                    }
                     
                     detailsDiv.innerHTML = `
                         <div class="details-completion">
@@ -2225,17 +2350,7 @@
                         ` : ''}
                         
                         <div class="referral-section" id="referralSection${message.id}">
-                            <div class="referral-link-container">
-                                <div class="referral-link-title">
-                                    <i class="fas fa-share-alt"></i> شارك رابط الإحالة مع أصدقائك
-                                </div>
-                                <div class="referral-link-box">
-                                    <input type="text" class="referral-link-input" id="referralLink${message.id}" readonly value="جاري التحميل...">
-                                    <button class="copy-link-btn" onclick="copyReferralLink('${message.id}', event)">
-                                        <i class="fab fa-whatsapp"></i> مشاركة
-                                    </button>
-                                </div>
-                            </div>
+                            ${referralSectionHTML}
                             
                             <div class="referrals-list-container">
                                 <div class="referrals-list-title">
@@ -2250,8 +2365,10 @@
                     
                     cardElement.appendChild(detailsDiv);
                     
-                    // ✅ تحميل بيانات الإحالة مع message.id الصحيح
-                    loadReferralData(message.id);
+                    // ✅ تحميل بيانات الإحالة فقط إذا نشر إعلان
+                    if (hasPublishedAd) {
+                        loadReferralData(message.id);
+                    }
                 }
                 
                 setTimeout(() => {
