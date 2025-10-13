@@ -1,0 +1,1243 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مرجان - إنشاء حساب جديد</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- إضافة Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <style>
+        /* ============ الإعدادات العامة والهيكل الأساسي ============ */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Tajawal', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            color: #333;
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 0;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            margin: 0;
+        }
+        
+        /* ============ شريط العنوان ============ */
+        .header-bar {
+            background: rgba(255, 255, 255, 0.98);
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-bottom: 1px solid #e6e9ef;
+        }
+        
+        .category-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .category-icon {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #e6e9ef;
+            box-shadow: 3px 3px 8px rgba(0, 0, 0, 0.1),
+                        -3px -3px 8px rgba(255, 255, 255, 0.7);
+        }
+        
+        .category-icon i {
+            font-size: 1rem;
+            color: #1a2a6c;
+        }
+        
+        .category-name {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #1a2a6c;
+        }
+        
+        /* ============ نموذج التسجيل ============ */
+        .form-container {
+            padding: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #1a2a6c;
+            font-size: 0.9rem;
+        }
+        
+        .form-input, .form-select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e6e9ef;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            outline: none;
+            transition: all 0.3s;
+            background: white;
+        }
+        
+        .form-input:focus, .form-select:focus {
+            border-color: #4a6fc5;
+            box-shadow: 0 0 0 2px rgba(74, 111, 197, 0.2);
+        }
+        
+        .form-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 0;
+        }
+        .form-row .form-group {
+            margin-bottom: 0px;
+        }
+        
+        .form-col {
+            flex: 1;
+        }
+        
+        .study-fields {
+            display: none;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            border-left: 4px solid #4a6fc5;
+        }
+        
+        .study-fields.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .form-actions {
+            margin-top: 20px;
+        }
+        
+        .submit-btn {
+            width: 100%;
+            background: linear-gradient(to right, #1a2a6c, #4a6fc5);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            box-shadow: 0 4px 12px rgba(26, 42, 108, 0.3);
+        }
+        
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(26, 42, 108, 0.4);
+        }
+        
+        .submit-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .login-link {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+        
+        .login-link a {
+            color: #4a6fc5;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .login-link a:hover {
+            text-decoration: underline;
+        }
+        
+        .error-message {
+            color: #dc3545;
+            font-size: 0.8rem;
+            margin-top: 5px;
+            display: none;
+        }
+        
+        .success-message {
+            color: #28a745;
+            font-size: 0.9rem;
+            margin-top: 10px;
+            text-align: center;
+            display: none;
+        }
+        
+        /* ============ رسالة الانتظار ============ */
+        .waiting-message {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 165, 0, 0.9);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .waiting-message.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        /* ============ رسالة الخطأ ============ */
+        .error-popup {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 0, 0, 0.9);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .error-popup.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        
+        /* ============ التصميم المتجاوب ============ */
+        @media (max-width: 768px) {
+            .form-row {
+                flex-direction: column;
+                gap: 0;
+            }
+            
+            .form-col {
+                width: 100%;
+                margin-bottom: 15px;
+            }
+            
+            .container {
+                margin: 10px;
+                max-width: 95%;
+            }
+            
+            .header-bar {
+                padding: 12px;
+            }
+            
+            .form-container {
+                padding: 15px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            .form-row {
+                flex-direction: row;
+                gap: 10px;
+                margin-bottom: 10px;
+            }
+            .form-col {
+                flex: 1;
+                margin-bottom: 0;
+            }
+            .header-bar {
+                padding: 10px 8px;
+            }
+            .form-input, .form-select {
+                padding: 8px 10px;
+                font-size: 0.85rem;
+            }
+            .form-label {
+                font-size: 0.8rem;
+                margin-bottom: 3px;
+            }
+            .form-input {
+                min-width: 0;
+            }
+
+            .login-link {
+                font-size: 0.8rem;
+            }
+
+            .error-message {
+                font-size: 0.7rem;
+            }
+            .success-message {
+                font-size: 0.75rem;
+            }
+            .category-icon {
+                width: 25px;
+                height: 25px;
+            }
+            .category-icon i {
+                font-size: 0.75rem;
+            }
+            .form-group {
+                margin-bottom: 12px;
+            }
+            
+            .study-fields {
+                padding: 12px;
+            }
+
+            .submit-btn {
+                padding: 8px;
+                font-size: 0.8rem;
+            }
+            
+            .category-name {
+                font-size: 0.85rem;
+            }
+            
+            .container {
+                max-width: 100%;
+                margin: 0;
+                border-radius: 0;
+            }
+             body {
+                padding: 0;
+            }
+        }
+        
+        @media (max-width: 350px) {
+            .container {
+                max-width: 100%;
+                margin: 10px;
+                border-radius: 0;
+            }
+            
+            body {
+                padding: 5px;
+            }
+        }
+        
+    </style>
+</head>
+<body>
+    <!-- ============ رسالة الانتظار ============ -->
+    <div class="waiting-message" id="waitingMessage">
+        <i class="fas fa-spinner fa-spin"></i>
+        <span>جاري إنشاء الحساب...</span>
+    </div>
+
+    <!-- ============ رسالة الخطأ ============ -->
+    <div class="error-popup" id="errorMessage">
+        <i class="fas fa-exclamation-circle"></i>
+        <span id="errorText"></span>
+    </div>
+
+    <!-- ============ الحاوية الرئيسية ============ -->
+    <div class="container">
+        <!-- ============ شريط العنوان ============ -->
+        <div class="header-bar">
+            <div class="category-title">
+                <div class="category-icon">
+                    <i class="fas fa-user-plus"></i>
+                </div>
+                <h1 class="category-name">إنشاء حساب جديد</h1>
+            </div>
+        </div>
+        
+        <!-- ============ نموذج التسجيل ============ -->
+        <div class="form-container">
+            <form id="signupForm">
+                <div class="form-row">
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label class="form-label">الاسم الأول</label>
+                            <input type="text" class="form-input" id="firstName" placeholder="أدخل اسمك الأول">
+                            <div class="error-message" id="firstNameError">الاسم الأول مطلوب</div>
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label class="form-label">اسم العائلة</label>
+                            <input type="text" class="form-input" id="lastName" placeholder="أدخل اسم عائلتك">
+                            <div class="error-message" id="lastNameError">اسم العائلة مطلوب</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">رقم الهاتف</label>
+                    <input type="tel" class="form-input" id="phone" placeholder="أدخل رقم هاتفك">
+                    <div class="error-message" id="phoneError">رقم هاتف صحيح مطلوب</div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">البريد الإلكتروني</label>
+                    <input type="email" class="form-input" id="email" placeholder="example@mail.com">
+                    <div class="error-message" id="emailError">بريد إلكتروني صحيح مطلوب</div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">كلمة السر</label>
+                    <input type="password" class="form-input" id="password" placeholder="أدخل كلمة السر">
+                    <div class="error-message" id="passwordError">كلمة السر يجب أن تكون 8 أحرف على الأقل</div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">تأكيد كلمة السر</label>
+                    <input type="password" class="form-input" id="confirmPassword" placeholder="أعد إدخال كلمة السر">
+                    <div class="error-message" id="confirmPasswordError">كلمة السر غير متطابقة</div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">العنوان</label>
+                    <input type="text" class="form-input" id="address" placeholder="أدخل عنوانك">
+                    <div class="error-message" id="addressError">العنوان مطلوب</div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">تاريخ الميلاد</label>
+                    <input type="date" class="form-input" id="birthDate">
+                    <div class="error-message" id="birthDateError">تاريخ ميلاد صحيح مطلوب</div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">الجنس</label>
+                    <select class="form-select" id="gender">
+                        <option value="">اختر الجنس</option>
+                        <option value="male">ذكر</option>
+                        <option value="female">أنثى</option>
+                    </select>
+                    <div class="error-message" id="genderError">الجنس مطلوب</div>
+                </div>
+                
+                <!-- الحقول الجديدة المضافة -->
+                <div class="form-group">
+                    <label class="form-label">الجنسية</label>
+                    <select class="form-select" id="nationality">
+                        <option value="">اختر جنسيتك</option>
+                        <option value="SA">السعودية</option>
+                        <option value="EG">مصر</option>
+                        <option value="AE">الإمارات العربية المتحدة</option>
+                        <option value="BH">البحرين</option>
+                        <option value="DZ">الجزائر</option>
+                        <option value="IQ">العراق</option>
+                        <option value="JO">الأردن</option>
+                        <option value="KW">الكويت</option>
+                        <option value="LB">لبنان</option>
+                        <option value="LY">ليبيا</option>
+                        <option value="MA">المغرب</option>
+                        <option value="OM">عُمان</option>
+                        <option value="QA">قطر</option>
+                        <option value="SY">سوريا</option>
+                        <option value="TN">تونس</option>
+                        <option value="YE">اليمن</option>
+                        <option value="SD">السودان</option>
+                        <option value="SO">الصومال</option>
+                        <option value="MR">موريتانيا</option>
+                        <option value="PS">فلسطين</option>
+                        <option value="DJ">جيبوتي</option>
+                        <option value="KM">جزر القمر</option>
+                    </select>
+                    <div class="error-message" id="nationalityError">الجنسية مطلوبة</div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">البلد الذي تسكن فيه حالياً</label>
+                    <select class="form-select" id="currentCountry">
+                        <option value="">اختر بلد الإقامة</option>
+                        <option value="SA">السعودية</option>
+                        <option value="EG">مصر</option>
+                        <option value="AE">الإمارات العربية المتحدة</option>
+                        <option value="BH">البحرين</option>
+                        <option value="DZ">الجزائر</option>
+                        <option value="IQ">العراق</option>
+                        <option value="JO">الأردن</option>
+                        <option value="KW">الكويت</option>
+                        <option value="LB">لبنان</option>
+                        <option value="LY">ليبيا</option>
+                        <option value="MA">المغرب</option>
+                        <option value="OM">عُمان</option>
+                        <option value="QA">قطر</option>
+                        <option value="SY">سوريا</option>
+                        <option value="TN">تونس</option>
+                        <option value="YE">اليمن</option>
+                        <option value="SD">السودان</option>
+                        <option value="SO">الصومال</option>
+                        <option value="MR">موريتانيا</option>
+                        <option value="PS">فلسطين</option>
+                        <option value="DJ">جيبوتي</option>
+                        <option value="KM">جزر القمر</option>
+                        <option value="OTHER">دولة أخرى</option>
+                    </select>
+                    <div class="error-message" id="currentCountryError">بلد الإقامة مطلوب</div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">البلد الذي تريد نتائج البحث فيه</label>
+                    <select class="form-select" id="searchCountry">
+                        <option value="">اختر بلد البحث</option>
+                        <option value="SA">السعودية</option>
+                        <option value="EG">مصر</option>
+                        <option value="AE">الإمارات العربية المتحدة</option>
+                        <option value="BH">البحرين</option>
+                        <option value="DZ">الجزائر</option>
+                        <option value="IQ">العراق</option>
+                        <option value="JO">الأردن</option>
+                        <option value="KW">الكويت</option>
+                        <option value="LB">لبنان</option>
+                        <option value="LY">ليبيا</option>
+                        <option value="MA">المغرب</option>
+                        <option value="OM">عُمان</option>
+                        <option value="QA">قطر</option>
+                        <option value="SY">سوريا</option>
+                        <option value="TN">تونس</option>
+                        <option value="YE">اليمن</option>
+                        <option value="SD">السودان</option>
+                        <option value="SO">الصومال</option>
+                        <option value="MR">موريتانيا</option>
+                        <option value="PS">فلسطين</option>
+                        <option value="DJ">جيبوتي</option>
+                        <option value="KM">جزر القمر</option>
+                        <option value="ALL">جميع البلدان العربية</option>
+                    </select>
+                    <div class="error-message" id="searchCountryError">بلد البحث مطلوب</div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">مجال العمل</label>
+                    <select class="form-select" id="jobField">
+                        <option value="">اختر مجال العمل</option>
+                        <option value="سائق">سائق</option>
+                        <option value="حرفيين">حرفيين</option>
+                        <option value="مهندس">مهندس</option>
+                        <option value="تعليم و تدريس">تعليم و تدريس</option>
+                        <option value="عمالة منزلية">عمالة منزلية</option>
+                        <option value="حسابات">حسابات</option>
+                        <option value="خدمة الزبائن">خدمة الزبائن</option>
+                        <option value="إدارة">إدارة</option>
+                        <option value="برمجة">برمجة</option>
+                        <option value="mبيعات و تسويق">مبيعات و تسويق</option>
+                        <option value="طب و تمريض">طب و تمريض</option>
+                        <option value="تصميم">تصميم</option>
+                        <option value="أخرى">أخرى</option>
+                    </select>
+                    <div class="error-message" id="jobFieldError">مجال العمل مطلوب</div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">هل تدرس حالياً؟</label>
+                    <select class="form-select" id="isStudent">
+                        <option value="">اختر الإجابة</option>
+                        <option value="no">لا</option>
+                        <option value="yes">نعم</option>
+                    </select>
+                </div>
+                
+                <div class="study-fields" id="studyFields">
+                    <div class="form-group">
+                        <label class="form-label">المرحلة الدراسية</label>
+                        <select class="form-select" id="educationLevel">
+                            <option value="">اختر المرحلة الدراسية</option>
+                            <option value="ابتدائي">ابتدائي</option>
+                            <option value="متوسط">متوسط</option>
+                            <option value="ثانوي">ثانوي</option>
+                            <option value="دبلوم">دبلوم</option>
+                            <option value="بكالوريوس">بكالوريús</option>
+                            <option value="ماجستير">ماجستير</option>
+                            <option value="دكتوراه">دكتوراه</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">مجال الدراسة</label>
+                        <input type="text" class="form-input" id="studyField" placeholder="أدخل مجال دراستك">
+                    </div>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="submit-btn" id="submitBtn">إنشاء حساب</button>
+                    <div class="success-message" id="successMessage">تم إنشاء الحساب بنجاح! سيتم توجيهك إلى صفحة تسجيل الدخول.</div>
+                </div>
+                
+                <div class="login-link">
+                    لديك حساب بالفعل؟ <a href="#">سجل الدخول</a>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        // ============ تهيئة Firebase ============
+        const firebaseConfig = {
+            apiKey: "AIzaSyDZFR9qYKG3vbrrwhNIpy7N3Rfl4J5bxzA",
+            authDomain: "marjan-88c6e.firebaseapp.com",
+            projectId: "marjan-88c6e",
+            storageBucket: "marjan-88c6e.appspot.com",
+            messagingSenderId: "92987465899",
+            appId: "1:92987465899:web:f91398c67f4812b67e57ee",
+            measurementId: "G-FX97RGZRPT"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+
+        // تهيئة الخدمات التي سنستخدمها
+        const db = firebase.firestore(); // قاعدة البيانات
+        const auth = firebase.auth(); // المصادقة
+
+        // عناصر DOM
+        const signupForm = document.getElementById('signupForm');
+        const isStudentSelect = document.getElementById('isStudent');
+        const studyFields = document.getElementById('studyFields');
+        const submitBtn = document.getElementById('submitBtn');
+        const successMessage = document.getElementById('successMessage');
+        const waitingMessage = document.getElementById('waitingMessage');
+        const errorMessage = document.getElementById('errorMessage');
+        const errorText = document.getElementById('errorText');
+
+        
+
+        // ✅ قراءة بيانات الإحالة من URL عند تحميل الصفحة
+        let globalReferralCode = null;
+        let globalCompetitionId = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // ✅ قراءة البيانات من URL مباشرة
+            const urlParams = new URLSearchParams(window.location.search);
+            const referralCode = urlParams.get('ref');
+            const competitionId = urlParams.get('competition');
+            
+            if (referralCode && competitionId) {
+                // حفظ في متغيرات عامة للاستخدام لاحقاً فقط
+                globalReferralCode = referralCode;
+                globalCompetitionId = competitionId;
+                
+                console.log('========================================');
+                console.log('✅ تم استلام بيانات الإحالة من URL:');
+                console.log('   📋 كود الإحالة:', referralCode);
+                console.log('   🎯 معرف المسابقة:', competitionId);
+                console.log('   💾 تم الحفظ في المتغيرات العامة');
+                console.log('========================================');
+            } else {
+                console.log('ℹ️ لا توجد بيانات إحالة في URL - تسجيل عادي بدون إحالة');
+                if (!referralCode) {
+                    console.log('   - كود الإحالة: غير موجود');
+                }
+                if (!competitionId) {
+                    console.log('   - معرف المسابقة: غير موجود');
+                }
+            }
+        });
+        
+        // دالة لعرض رسالة الانتظار
+        function showWaitingMessage() {
+            waitingMessage.classList.add('active');
+        }
+        
+        // دالة لإخفاء رسالة الانتظار
+        function hideWaitingMessage() {
+            waitingMessage.classList.remove('active');
+        }
+        async function updateReferrerData(refCode, competitionId, newUserUID, firstName, lastName) {
+            console.log('🔍 البحث عن المُحيل:', refCode);
+            
+            try {
+                // البحث عن المُحيل بكود الإحالة
+                const referrerQuery = await db.collection('users')
+                    .where('referralCode', '==', refCode)
+                    .limit(1)
+                    .get();
+                
+                if (referrerQuery.empty) {
+                    console.error('❌ لم يتم العثور على المُحيل');
+                    return;
+                }
+                
+                const referrerDoc = referrerQuery.docs[0];
+                const referrerUID = referrerDoc.id;
+                const referrerData = referrerDoc.data();
+                
+                console.log('✅ تم العثور على المُحيل:', referrerUID);
+                
+                // بيانات المُحال الجديد
+                const newReferral = {
+                    uid: newUserUID,
+                    name: `${firstName} ${lastName}`,
+                    status: 'pending', // سيتغير إلى 'success' عند نشر إعلان
+                    addedAt: firebase.firestore.Timestamp.now()
+                };
+                
+                // الحصول على بيانات المسابقة
+                const competitions = referrerData.competitions || {};
+                const competitionData = competitions[competitionId] || {
+                    competitionId: competitionId,
+                    percentage: 0,
+                    referralLink: '',
+                    successfulReferrals: []
+                };
+                
+                // إضافة المُحال الجديد
+                if (!competitionData.successfulReferrals) {
+                    competitionData.successfulReferrals = [];
+                }
+                competitionData.successfulReferrals.push(newReferral);
+                
+                competitions[competitionId] = competitionData;
+                
+                // حفظ التحديثات
+                await db.collection('users').doc(referrerUID).update({
+                    competitions: competitions
+                });
+                
+                console.log('✅ تم إضافة المُحال إلى قائمة المُحيل بنجاح');
+                console.log('   - عدد المُحالين:', competitionData.successfulReferrals.length);
+                
+            } catch (error) {
+                console.error('❌ خطأ في تحديث بيانات المُحيل:', error);
+                throw error;
+            }
+        }
+        
+        // دالة لعرض رسالة الخطأ
+        function showError(message) {
+            errorText.textContent = message;
+            errorMessage.classList.add('active');
+            setTimeout(() => {
+                errorMessage.classList.remove('active');
+            }, 3000);
+        }
+
+        // إظهار/إخفاء حقول الدراسة
+        isStudentSelect.addEventListener('change', function() {
+            if (this.value === 'yes') {
+                studyFields.classList.add('active');
+            } else {
+                studyFields.classList.remove('active');
+            }
+        });
+        
+        // التحقق من صحة النموذج
+        signupForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            let isValid = true;
+            
+            // التحقق من الاسم الأول
+            const firstName = document.getElementById('firstName');
+            const firstNameError = document.getElementById('firstNameError');
+            if (!firstName.value.trim()) {
+                firstNameError.style.display = 'block';
+                isValid = false;
+            } else {
+                firstNameError.style.display = 'none';
+            }
+            
+            // التحقق من اسم العائلة
+            const lastName = document.getElementById('lastName');
+            const lastNameError = document.getElementById('lastNameError');
+            if (!lastName.value.trim()) {
+                lastNameError.style.display = 'block';
+                isValid = false;
+            } else {
+                lastNameError.style.display = 'none';
+            }
+            
+            // التحقق من رقم الهاتف
+            const phone = document.getElementById('phone');
+            const phoneError = document.getElementById('phoneError');
+            const phoneRegex = /^(\+?966|0)?5[0-9]{8}$/;
+            if (!phoneRegex.test(phone.value)) {
+                phoneError.style.display = 'block';
+                isValid = false;
+            } else {
+                phoneError.style.display = 'none';
+            }
+            
+            // التحقق من البريد الإلكتروني
+            const email = document.getElementById('email');
+            const emailError = document.getElementById('emailError');
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email.value)) {
+                emailError.style.display = 'block';
+                isValid = false;
+            } else {
+                emailError.style.display = 'none';
+            }
+            
+            // التحقق من كلمة السر
+            const password = document.getElementById('password');
+            const passwordError = document.getElementById('passwordError');
+            if (password.value.length < 8) {
+                passwordError.style.display = 'block';
+                isValid = false;
+            } else {
+                passwordError.style.display = 'none';
+            }
+            
+            // التحقق من تطابق كلمة السر
+            const confirmPassword = document.getElementById('confirmPassword');
+            const confirmPasswordError = document.getElementById('confirmPasswordError');
+            if (password.value !== confirmPassword.value) {
+                confirmPasswordError.style.display = 'block';
+                isValid = false;
+            } else {
+                confirmPasswordError.style.display = 'none';
+            }
+            
+            // التحقق من العنوان
+            const address = document.getElementById('address');
+            const addressError = document.getElementById('addressError');
+            if (!address.value.trim()) {
+                addressError.style.display = 'block';
+                isValid = false;
+            } else {
+                addressError.style.display = 'none';
+            }
+            
+            // التحقق من تاريخ الميلاد
+            const birthDate = document.getElementById('birthDate');
+            const birthDateError = document.getElementById('birthDateError');
+            if (!birthDate.value) {
+                birthDateError.style.display = 'block';
+                isValid = false;
+            } else {
+                birthDateError.style.display = 'none';
+            }
+            
+            // التحقق من الجنس
+            const gender = document.getElementById('gender');
+            const genderError = document.getElementById('genderError');
+            if (!gender.value) {
+                genderError.style.display = 'block';
+                isValid = false;
+            } else {
+                genderError.style.display = 'none';
+            }
+            
+            // التحقق من الجنسية (الحقل الجديد)
+            const nationality = document.getElementById('nationality');
+            const nationalityError = document.getElementById('nationalityError');
+            if (!nationality.value) {
+                nationalityError.style.display = 'block';
+                isValid = false;
+            } else {
+                nationalityError.style.display = 'none';
+            }
+            
+            // التحقق من بلد الإقامة (الحقل الجديد)
+            const currentCountry = document.getElementById('currentCountry');
+            const currentCountryError = document.getElementById('currentCountryError');
+            if (!currentCountry.value) {
+                currentCountryError.style.display = 'block';
+                isValid = false;
+            } else {
+                currentCountryError.style.display = 'none';
+            }
+            
+            // التحقق من بلد البحث (الحقل الجديد)
+            const searchCountry = document.getElementById('searchCountry');
+            const searchCountryError = document.getElementById('searchCountryError');
+            if (!searchCountry.value) {
+                searchCountryError.style.display = 'block';
+                isValid = false;
+            } else {
+                searchCountryError.style.display = 'none';
+            }
+            
+            // التحقق من مجال العمل
+            const jobField = document.getElementById('jobField');
+            const jobFieldError = document.getElementById('jobFieldError');
+            if (!jobField.value) {
+                jobFieldError.style.display = 'block';
+                isValid = false;
+            } else {
+                jobFieldError.style.display = 'none';
+            }
+            
+            // إذا كان النموذج صحيحاً، نقوم بتسجيل البيانات
+            if (isValid) {
+                // جمع بيانات النموذج
+                const formData = {
+                    firstName: firstName.value,
+                    lastName: lastName.value,
+                    phone: phone.value,
+                    email: email.value,
+                    password: password.value,
+                    address: address.value,
+                    birthDate: birthDate.value,
+                    gender: gender.value,
+                    nationality: nationality.value,
+                    currentCountry: currentCountry.value,
+                    searchCountry: searchCountry.value,
+                    jobField: jobField.value,
+                    isStudent: isStudentSelect.value,
+                    educationLevel: isStudentSelect.value === 'yes' ? document.getElementById('educationLevel').value : '',
+                    studyField: isStudentSelect.value === 'yes' ? document.getElementById('studyField').value : '',
+                    timestamp: new Date().toLocaleString('ar-SA'),
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                
+                // حفظ البيانات في localStorage
+                localStorage.setItem('userData', JSON.stringify(formData));
+                
+                // تعطيل زر الإرسال وإظهار رسالة التحميل
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'جاري إنشاء الحساب...';
+                
+                // عرض رسالة الانتظار
+                showWaitingMessage();
+                
+                try {
+                    const userCredential = await auth.createUserWithEmailAndPassword(formData.email, formData.password);
+                    const user = userCredential.user;
+                    
+                    // ✅ تغيير 1: استخدام doc(user.uid).set بدلاً من add
+                    await db.collection('users').doc(user.uid).set({
+                        ...formData,
+                        uid: user.uid,
+                        currentBalance: 50,
+                        referralCode: user.uid.substring(0, 8).toUpperCase(),
+                        hasPublishedAd: false, // ✅ إضافة جديدة
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+
+                    // ✅ معالجة الإحالة - الكود الجديد
+                    // ✅ معالجة الإحالة - الكود الكامل المُحسّن
+                    const refCode = globalReferralCode;
+                    const competitionId = globalCompetitionId;
+
+                    if (refCode && competitionId) {
+                        try {
+                            console.log('========================================');
+                            console.log('🔍 بدء معالجة الإحالة');
+                            console.log('========================================');
+                            console.log('📋 كود الإحالة:', refCode);
+                            console.log('🎯 معرف المسابقة:', competitionId);
+                            console.log('👤 اسم المستخدم الجديد:', `${firstName.value} ${lastName.value}`);
+                            console.log('🆔 UID المستخدم الجديد:', user.uid);
+                            console.log('----------------------------------------');
+                            
+                            // 1️⃣ البحث عن المستخدم المُحيل بواسطة كود الإحالة
+                            console.log('🔍 الخطوة 1: البحث عن المُحيل...');
+                            const referrerQuery = await db.collection('users')
+                                .where('referralCode', '==', refCode)
+                                .limit(1)
+                                .get();
+                            
+                            if (referrerQuery.empty) {
+                                console.error('❌ لم يتم العثور على مستخدم بكود الإحالة:', refCode);
+                                console.log('💡 تأكد من أن كود الإحالة صحيح');
+                                return;
+                            }
+                            
+                            // 2️⃣ الحصول على معلومات المُحيل
+                            const referrerDoc = referrerQuery.docs[0];
+                            const referrerUID = referrerDoc.id;
+                            const newUserName = `${firstName.value} ${lastName.value}`;
+                            
+                            console.log('✅ تم العثور على المُحيل!');
+                            console.log('👤 UID المُحيل:', referrerUID);
+                            console.log('----------------------------------------');
+                            
+                            // 3️⃣ جلب أحدث بيانات المُحيل من Firebase
+                            console.log('🔍 الخطوة 2: جلب بيانات المُحيل الحديثة...');
+                            const freshReferrerDoc = await db.collection('users').doc(referrerUID).get();
+                            
+                            if (!freshReferrerDoc.exists) {
+                                console.error('❌ وثيقة المُحيل غير موجودة!');
+                                return;
+                            }
+                            
+                            const referrerData = freshReferrerDoc.data();
+                            console.log('✅ تم جلب بيانات المُحيل بنجاح');
+                            console.log('📊 البيانات الأساسية:', {
+                                email: referrerData.email,
+                                firstName: referrerData.firstName,
+                                lastName: referrerData.lastName,
+                                referralCode: referrerData.referralCode
+                            });
+                            console.log('----------------------------------------');
+                            
+                            // 4️⃣ التحقق من وجود قسم المسابقات
+                            console.log('🔍 الخطوة 3: التحقق من قسم المسابقات...');
+                            
+                            if (!referrerData.competitions) {
+                                console.error('❌ قسم المسابقات غير موجود لدى المُحيل!');
+                                console.log('💡 يجب على المُحيل فتح بطاقة المسابقة أولاً');
+                                return;
+                            }
+                            
+                            console.log('✅ قسم المسابقات موجود');
+                            console.log('📋 عدد المسابقات:', Object.keys(referrerData.competitions).length);
+                            console.log('🔑 معرفات المسابقات المتاحة:', Object.keys(referrerData.competitions));
+                            console.log('----------------------------------------');
+                            
+                            // 5️⃣ التحقق من وجود المسابقة المحددة
+                            console.log('🔍 الخطوة 4: التحقق من المسابقة المحددة...');
+                            
+                            if (!referrerData.competitions[competitionId]) {
+                                console.error('❌ المسابقة المحددة غير موجودة!');
+                                console.log('🎯 المسابقة المطلوبة:', competitionId);
+                                console.log('📋 المسابقات الموجودة:', Object.keys(referrerData.competitions));
+                                console.log('💡 تأكد من أن المُحيل فتح هذه المسابقة بالذات');
+                                return;
+                            }
+                            
+                            console.log('✅ المسابقة المحددة موجودة!');
+                            const competitionData = referrerData.competitions[competitionId];
+                            console.log('📊 بيانات المسابقة:', {
+                                competitionId: competitionData.competitionId,
+                                percentage: competitionData.percentage,
+                                referralLink: competitionData.referralLink
+                            });
+                            console.log('----------------------------------------');
+                            
+                            // 6️⃣ الحصول على قائمة المحالين الحالية
+                            console.log('🔍 الخطوة 5: إضافة المستخدم الجديد...');
+                            const currentReferrals = competitionData.successfulReferrals || [];
+                            
+                            console.log('📋 عدد المحالين الحاليين:', currentReferrals.length);
+                            if (currentReferrals.length > 0) {
+                                console.log('👥 المحالون الحاليون:');
+                                currentReferrals.forEach((ref, index) => {
+                                    console.log(`   ${index + 1}. ${ref.name} (${ref.status})`);
+                                });
+                            }
+                            
+                            // 7️⃣ التحقق من عدم وجود المستخدم مسبقاً
+                            const alreadyExists = currentReferrals.some(ref => ref.uid === user.uid);
+                            if (alreadyExists) {
+                                console.warn('⚠️ المستخدم موجود بالفعل في قائمة المحالين!');
+                                return;
+                            }
+                            
+                            // 8️⃣ إضافة المستخدم الجديد
+                            const newReferral = {
+                                name: newUserName,
+                                uid: user.uid,
+                                status: 'failed',
+                                timestamp: new Date().toISOString()
+                            };
+                            
+                            currentReferrals.push(newReferral);
+                            
+                            console.log('➕ إضافة المستخدم الجديد:');
+                            console.log('   الاسم:', newReferral.name);
+                            console.log('   UID:', newReferral.uid);
+                            console.log('   الحالة:', newReferral.status);
+                            console.log('   الوقت:', newReferral.timestamp);
+                            console.log('📊 إجمالي المحالين بعد الإضافة:', currentReferrals.length);
+                            console.log('----------------------------------------');
+                            
+                            // 9️⃣ تحديث البيانات في Firebase
+                            console.log('🔍 الخطوة 6: حفظ البيانات في Firebase...');
+                            
+                            try {
+                                await db.collection('users').doc(referrerUID).update({
+                                    [`competitions.${competitionId}.successfulReferrals`]: currentReferrals
+                                });
+                                
+                                console.log('✅ تم تحديث قائمة المحالين في Firebase بنجاح!');
+                            } catch (updateError) {
+                                console.error('❌ خطأ في تحديث قائمة المحالين:', updateError);
+                                console.error('📋 رسالة الخطأ:', updateError.message);
+                                throw updateError;
+                            }
+                            
+                            console.log('----------------------------------------');
+                            
+                            // 🔟 حفظ معلومات الإحالة في بيانات المستخدم الجديد
+                            console.log('🔍 الخطوة 7: حفظ معلومات الإحالة في حساب المستخدم الجديد...');
+                            
+                            try {
+                                await db.collection('users').doc(user.uid).update({
+                                    referredBy: referrerUID,
+                                    referredCompetition: competitionId
+                                });
+                                
+                                console.log('✅ تم حفظ معلومات الإحالة في حساب المستخدم الجديد');
+                                console.log('   المُحيل:', referrerUID);
+                                console.log('   المسابقة:', competitionId);
+                            } catch (userUpdateError) {
+                                console.error('❌ خطأ في حفظ معلومات الإحالة:', userUpdateError);
+                                throw userUpdateError;
+                            }
+                            
+                            console.log('----------------------------------------');
+                            
+                            // 1️⃣1️⃣ التحقق النهائي من نجاح العملية
+                            console.log('🔍 الخطوة 8: التحقق النهائي...');
+                            
+                            const verifyDoc = await db.collection('users').doc(referrerUID).get();
+                            const verifyData = verifyDoc.data();
+                            const finalReferrals = verifyData.competitions[competitionId].successfulReferrals;
+                            
+                            console.log('✅ التحقق النهائي:');
+                            console.log('📊 عدد المحالين في Firebase:', finalReferrals.length);
+                            console.log('👥 آخر محال مُضاف:', finalReferrals[finalReferrals.length - 1].name);
+                            
+                            // التحقق من وجود المستخدم الجديد
+                            const isAdded = finalReferrals.some(ref => ref.uid === user.uid);
+                            if (isAdded) {
+                                console.log('🎉 نجحت العملية بالكامل! المستخدم موجود في قائمة المحالين');
+                            } else {
+                                console.error('❌ فشلت العملية! المستخدم غير موجود في قائمة المحالين');
+                            }
+                            
+                            console.log('----------------------------------------');
+                            
+                            // 1️⃣2️⃣ مسح البيانات المؤقتة
+                            // 🗑️ تنظيف: مسح المتغيرات العامة بعد الاستخدام
+                            globalReferralCode = null;
+                            globalCompetitionId = null;
+                            console.log('🗑️ تم تنظيف المتغيرات العامة بعد نجاح العملية');
+                            
+                            console.log('========================================');
+                            console.log('✅ انتهت عملية معالجة الإحالة بنجاح');
+                            console.log('========================================');
+                            
+                        } catch (referralError) {
+                            console.log('========================================');
+                            console.error('❌ حدث خطأ في معالجة الإحالة');
+                            console.log('========================================');
+                            console.error('📋 نوع الخطأ:', referralError.name);
+                            console.error('💬 رسالة الخطأ:', referralError.message);
+                            console.error('🔍 الكود:', referralError.code);
+                            console.error('📚 Stack trace:', referralError.stack);
+                            console.log('========================================');
+                            
+                            // لا نوقف عملية إنشاء الحساب
+                            console.log('💡 تم تخطي الإحالة، سيتم إكمال إنشاء الحساب');
+                        }
+                    } else {
+                        console.log('========================================');
+                        console.log('ℹ️ لا توجد بيانات إحالة - تسجيل عادي بدون إحالة');
+                        console.log('========================================');
+                        console.log('📊 حالة المتغيرات العامة:');
+                        console.log('   - globalReferralCode:', globalReferralCode || 'null');
+                        console.log('   - globalCompetitionId:', globalCompetitionId || 'null');
+                        console.log('========================================');
+                    }
+                    // ✅ باقي الكود الأصلي
+                    hideWaitingMessage();
+                    successMessage.style.display = 'block';
+
+                    // âœ… Ø­ÙØ¸ Ø­Ø§Ù„Ø© ØªØ³Ø¬ÙŠÙ„ Ø§Ù„Ø¯Ø®ÙˆÙ„ ÙƒØ§Ù…Ù„Ø©
+                    localStorage.setItem('isLoggedIn', 'true');
+                    localStorage.setItem('userEmail', user.email);
+                    localStorage.setItem('userUID', user.uid);
+                    localStorage.setItem('isNewAccount', 'true');
+
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 2000);
+                } catch (error) {
+                    // إخفاء رسالة الانتظار في حالة الخطأ
+                    hideWaitingMessage();
+                    
+                    console.error('Error:', error);
+                    
+                    // عرض رسالة الخطأ المناسبة
+                    let errorMessage = 'حدث خطأ أثناء إنشاء الحساب. يرجى المحاولة مرة أخرى.';
+                    
+                    if (error.code === 'auth/email-already-in-use') {
+                        errorMessage = 'هذا البريد الإلكتروني مستخدم بالفعل.';
+                    } else if (error.code === 'auth/invalid-email') {
+                        errorMessage = 'البريد الإلكتروني غير صالح.';
+                    } else if (error.code === 'auth/weak-password') {
+                        errorMessage = 'كلمة السر ضعيفة. يرجى اختيار كلمة سر أقوى.';
+                    } else if (error.code === 'auth/configuration-not-found') {
+                        errorMessage = 'خطأ في تكوين النظام. يرجى التواصل مع الدعم الفني.';
+                    }
+                    
+                    showError(errorMessage);
+                    
+                    // إعادة تمكين زر الإرسال
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'إنشاء حساب';
+                }
+            }
+        });
+        
+        // تعيين الحد الأقصى لتاريخ الميلاد (18 سنة على الأقل)
+        const today = new Date();
+        const minDate = new Date();
+        minDate.setFullYear(today.getFullYear() - 100); // الحد الأدنى للعمر 100 سنة
+        const maxDate = new Date();
+        maxDate.setFullYear(today.getFullYear() - 16); // يجب أن يكون عمر المستخدم 16 سنة على الأقل
+        
+        document.getElementById('birthDate').setAttribute('min', minDate.toISOString().split('T')[0]);
+        document.getElementById('birthDate').setAttribute('max', maxDate.toISOString().split('T')[0]);
+        // ============ كود اختباري - احذفه بعد التأكد ============
+        window.testReferralFlow = function() {
+            console.log('========================================');
+            console.log('🧪 اختبار تدفق الإحالة');
+            console.log('========================================');
+            console.log('1️⃣ URL الحالي:', window.location.href);
+            console.log('2️⃣ المتغيرات العامة:');
+            console.log('   - globalReferralCode:', globalReferralCode || 'غير محدد');
+            console.log('   - globalCompetitionId:', globalCompetitionId || 'غير محدد');
+            console.log('3️⃣ معاملات URL:');
+            const params = new URLSearchParams(window.location.search);
+            console.log('   - ref:', params.get('ref') || 'غير موجود');
+            console.log('   - competition:', params.get('competition') || 'غير موجود');
+            console.log('========================================');
+        };
+
+        // لتشغيل الاختبار، اكتب في console: testReferralFlow()
+    </script>
+ 
+
+
+
+</body>
+</html>

@@ -1,0 +1,2758 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مرجان - المراسلة</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <meta property="og:type" content="website">
+    <meta property="og:title" content=" مسابقة مرجان - أعلن واربح">
+    <meta property="og:description" content=" شارك رابطك مع أصدقائك واحصل على نقاط ذهبية ومكافآت قيمة! سجل الآن وابدأ الربح 🚀">
+    <meta property="og:image" content="https://clever-meerkat-4782ea.netlify.app/competition-image.jpg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:url" content="https://clever-meerkat-4782ea.netlify.app/chat.html">
+    <meta property="og:type" content="website">
+    <meta property="fb:app_id" content="ضع_معرف_التطبيق_هنا">
+    <style>
+        /* ============ الإعدادات العامة والهيكل الأساسي ============ */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Tajawal', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            color: #333;
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 0;
+            margin: 0;
+            padding-bottom: 80px; /* إضافة حشوة سفلية للشريط */
+        }
+        
+        .container {
+            max-width: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        
+        /* ============ قائمة المحادثات ============ */
+        .conversations-list {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: none;
+            min-height: calc(100vh - 150px);
+            padding-top: 0;
+        }
+        
+        .conversations-header {
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .conversations-header h2 {
+            color: #1a2a6c;
+            font-size: 1.4rem;
+        }
+        
+        .conversations-search {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        /* ============ رأس الصفحة الديناميكي ============ */
+        .hero-section {
+            position: relative;
+            background: linear-gradient(180deg, rgba(26, 42, 108, 0.95) 0%, rgba(67, 46, 145, 0.9) 100%);
+            padding: 30px 20px 80px;
+            overflow: hidden;
+            border-radius: 0 0 0px 0px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        /* خلفية متحركة */
+        .hero-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.1;
+            z-index: 0;
+        }
+
+        .floating-circle {
+            position: absolute;
+            border-radius: 50%;
+            background: white;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .circle-1 {
+            width: 100px;
+            height: 100px;
+            top: 20%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+
+        .circle-2 {
+            width: 60px;
+            height: 60px;
+            top: 60%;
+            right: 15%;
+            animation-delay: 2s;
+        }
+
+        .circle-3 {
+            width: 80px;
+            height: 80px;
+            bottom: 20%;
+            left: 70%;
+            animation-delay: 4s;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0px) scale(1);
+                opacity: 0.1;
+            }
+            50% {
+                transform: translateY(-30px) scale(1.1);
+                opacity: 0.2;
+            }
+        }
+
+        /* محتوى الرأس */
+        .hero-content {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+        }
+
+        .hero-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+                box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+            }
+            50% {
+                transform: scale(1.05);
+                box-shadow: 0 15px 40px rgba(102, 126, 234, 0.6);
+            }
+        }
+
+        .hero-title {
+            color: white;
+            font-size: 2rem;
+            font-weight: 900;
+            margin-bottom: 10px;
+            text-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .hero-subtitle {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1.1rem;
+            font-weight: 400;
+            margin-bottom: 25px;
+        }
+
+        /* إحصائيات سريعة */
+        .quick-stats {
+            display: flex;
+            justify-content: space-around;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 15px 20px;
+            flex: 1;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .stat-number {
+            font-size: 1.8rem;
+            font-weight: 900;
+            color: white;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.8);
+            margin-top: 5px;
+        }
+
+        /* العنوان */
+        .chat-header-modern h1 {
+            margin-top: 20px;
+            font-size: 1.8rem;
+            font-weight: 800;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            letter-spacing: 0.5px;
+        }
+
+        /* تعديل قائمة المحادثات لإزالة padding العلوي */
+        .conversations-list {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: none;
+            min-height: calc(100vh - 150px);
+            padding-top: 0; /* إزالة المسافة العلوية */
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 25px;
+            font-size: 1rem;
+            outline: none;
+        }
+        
+        .conversations {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 10px 10px; /* ✅ إضافة padding علوي */
+        }
+        /* ============ تصميم توسع البطاقات ============ */
+        .conversation-item {
+            transition: all 0.4s ease;
+        }
+
+        .conversation-details {
+            height: 0;
+            overflow: hidden;
+            transition: height 0.4s ease, padding 0.4s ease, opacity 0.3s ease;
+            opacity: 0;
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0.95), rgba(240, 245, 255, 0.98));
+            border-radius: 0 0 20px 20px;
+        }
+
+        .conversation-item.expanded .conversation-details {
+            height: auto;
+            padding: 20px;
+            opacity: 1;
+            border-top: 2px solid rgba(102, 126, 234, 0.3);
+        }
+
+        .details-completion {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 1px;
+            margin-top: 1px;
+        }
+
+        .details-progress-circle {
+            width: 80px;
+            height: 80px;
+            position: relative;
+        }
+
+        .details-progress-circle svg {
+            transform: rotate(-90deg);
+            width: 100%;
+            height: 100%;
+        }
+
+        .details-progress-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #1a2a6c;
+        }
+
+        .details-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #1a2a6c;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+
+        .details-message {
+            font-size: 1rem;
+            color: #333;
+            line-height: 1.8;
+            text-align: right;
+            margin-bottom: -5px;
+        }
+
+        .details-link {
+            text-align: center;
+            margin-top: 15px;
+        }
+
+        .details-link a {
+            display: inline-block;
+            background: linear-gradient(to right, #1a2a6c, #4a6fc5);
+            color: white;
+            padding: 12px 30px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: transform 0.3s ease;
+        }
+
+        .details-link a:hover {
+            transform: translateY(-2px);
+        }
+
+        
+        .conversation-item {
+            position: relative;
+            background: rgba(10, 10, 25, 0.95);
+            border: 2px solid rgba(102, 126, 234, 0.4);
+            border-radius: 30px;
+            overflow: hidden;
+            box-shadow: none;  /* كانت 0 15px 45px rgba(0, 0, 0, 0.6)، غيرناها إلى none */
+            animation: hologramPulse 4s ease-in-out infinite;
+            cursor: pointer;
+            margin-bottom: 20px;
+            padding: 0;
+            display: block;
+        }
+        .conversation-item::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, #667eea, #764ba2, #f093fb, #667eea);
+            border-radius: 20px;
+            opacity: 0.4;
+            z-index: -1;
+            animation: borderGlow 3s linear infinite;
+        }
+        .conversation-item:hover {
+            background: #e6f0ff;
+        }
+        
+        .conversation-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #888;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2rem;
+            margin-left: 15px;
+            flex-shrink: 0;
+            position: relative;
+        }
+        
+        .conversation-avatar i {
+            font-size: 1.5rem;
+        }
+        
+        .conversation-info {
+            flex: 1;
+        }
+        
+        .conversation-name {
+            font-weight: bold;
+            color: #1a2a6c;
+            margin-bottom: 5px;
+        }
+        
+        .conversation-preview {
+            color: #666;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .conversation-meta {
+            text-align: left;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+        
+        .conversation-time {
+            font-size: 0.8rem;
+            color: #888;
+            margin-bottom: 5px;
+        }
+        
+        .unread-count {
+            background: #ff4500;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+        }
+        
+        /* ============ نافذة الدردشة المنبثقة ============ */
+        .chat-popup {
+            position: fixed;
+            bottom: -100%;
+            left: 0;
+            width: 100%;
+            height: 85%;
+            background: white;
+            border-radius: 20px 20px 0 0;
+            box-shadow: 0 -5px 25px rgba(0, 0, 0, 0.3);
+            z-index: 1001;
+            transition: bottom 0.4s ease;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .chat-popup.active {
+            bottom: 0;
+        }
+        
+        .chat-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #f9f9f9;
+            border-radius: 20px 20px 0 0;
+        }
+        
+        .chat-user-info {
+            display: flex;
+            align-items: center;
+        }
+        
+        .chat-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #888;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1rem;
+            margin-left: 10px;
+        }
+        
+        .chat-avatar i {
+            font-size: 1.2rem;
+        }
+        
+        .chat-user-name {
+            font-weight: bold;
+            color: #1a2a6c;
+        }
+        
+        .close-chat {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: #1a2a6c;
+            cursor: pointer;
+        }
+        
+        .messages-container {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            background: #f0f5ff;
+        }
+        
+        
+        
+        
+        .message-input-container {
+            padding: 15px 20px;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 10px;
+            background: white;
+        }
+        
+        .message-input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 25px;
+            font-size: 1rem;
+            outline: none;
+            resize: none;
+            height: 50px;
+            max-height: 120px;
+        }
+        
+        .send-btn {
+            background: linear-gradient(to right, #1a2a6c, #4a6fc5);
+            color: white;
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            display: none;
+        }
+        .referral-item {
+            display: grid;
+            grid-template-columns: 2fr 3fr 1fr;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 15px;
+            background: white;
+            border-radius: 10px;
+            border: 1px solid #e0e0e0;
+            transition: all 0.3s ease;
+        }
+
+        .referral-item:hover {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transform: translateX(-3px);
+        }
+        
+        .overlay.active {
+            display: block;
+        }
+        
+        /* ============ الشريط السفلي الزجاجي المعدل ============ */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 25px 25px 0 0;
+            padding: 12px 15px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            box-shadow: 0 -5px 25px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 1000;
+        }
+        
+        .nav-item {
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            font-size: 0.8rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 6px 12px;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .referral-status-icon.failed {
+            color: #ff4757;
+        }
+        /* ============ تصميم قالب الهولوجرام للمسابقات ============ */
+        .message.hologram-style {
+            max-width: 90%;
+            padding: 0;
+            border-radius: 20px;
+            background: rgba(10, 10, 25, 0.95);
+            border: 2px solid rgba(102, 126, 234, 0.4);
+            overflow: hidden;
+            box-shadow: 0 15px 45px rgba(0, 0, 0, 0.6);
+            animation: hologramPulse 4s ease-in-out infinite;
+        }
+
+       
+
+        .message.hologram-style::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, #667eea, #764ba2, #f093fb, #667eea);
+            border-radius: 20px;
+            opacity: 0.4;
+            z-index: -1;
+            animation: borderGlow 3s linear infinite;
+        }
+
+        @keyframes borderGlow {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.6; }
+        }
+       
+
+        .holo-image-container {
+            position: relative;
+            width: 100%;
+            height: 280px;
+            overflow: hidden;
+        }
+
+        .holo-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        /* ============ تصميم رابط الإحالة وقائمة المحالين ============ */
+        .referral-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px dashed rgba(102, 126, 234, 0.3);
+        }
+
+        .referral-link-container {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 15px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+
+        .referral-link-title {
+            color: white;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .referral-link-box {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .referral-link-input {
+            flex: 1;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            background: white;
+            color: #333;
+            direction: ltr;
+            text-align: left;
+        }
+
+        .copy-link-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .copy-link-btn:hover {
+            background: white;
+            color: #667eea;
+        }
+
+        .copy-link-btn.copied {
+            background: #4CAF50;
+            border-color: #4CAF50;
+        }
+
+        .referrals-list-container {
+            margin-top: 20px;
+        }
+
+        .referrals-list-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #1a2a6c;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .referrals-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .referral-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 15px;
+            background: white;
+            border-radius: 10px;
+            border: 1px solid #e0e0e0;
+            transition: all 0.3s ease;
+        }
+
+        .referral-item:hover {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transform: translateX(-3px);
+        }
+
+        .referral-user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+        }
+
+        .referral-user-name {
+            font-weight: 600;
+            color: #333;
+            font-size: 0.95rem;
+        }
+
+        .referral-status-icon {
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .referral-status-icon.completed {
+            color: #4CAF50;
+        }
+
+        .no-referrals {
+            text-align: center;
+            padding: 20px;
+            color: #888;
+            font-size: 0.9rem;
+        }
+
+        
+
+        .holo-shine-effect {
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(
+                90deg,
+                transparent 0%,
+                rgba(255, 255, 255, 0.1) 25%,
+                rgba(255, 255, 255, 0.5) 50%,
+                rgba(255, 255, 255, 0.1) 75%,
+                transparent 100%
+            );
+            transform: skewX(-20deg);
+            animation: holoShine 3s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes holoShine {
+            0% { left: -100%; }
+            50% { left: 150%; }
+            100% { left: 150%; }
+        }
+
+        .holo-image-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 65%;
+            background: linear-gradient(
+                to top,
+                rgba(10, 10, 25, 0.98) 0%,
+                rgba(10, 10, 25, 0.75) 50%,
+                transparent 100%
+            );
+            pointer-events: none;
+        }
+
+        .holo-message-content {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 20px;
+            z-index: 2;
+        }
+
+        .holo-message-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .holo-progress-circle {
+            width: 50px;
+            height: 50px;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .holo-progress-circle svg {
+            transform: rotate(-90deg);
+            width: 100%;
+            height: 100%;
+        }
+
+        .holo-progress-bg {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.15);
+            stroke-width: 4;
+        }
+
+        .holo-progress-fill {
+            fill: none;
+            stroke: url(#holoProgressGradient);
+            stroke-width: 4;
+            stroke-linecap: round;
+            stroke-dasharray: 145;
+            transition: stroke-dashoffset 2s ease-out;
+        }
+
+        .holo-progress-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
+        }
+
+        .holo-sender-info {
+            flex: 1;
+        }
+
+        .holo-sender-name {
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
+            margin-bottom: 2px;
+        }
+
+        .holo-completion-status {
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 0.75rem;
+            text-shadow: 0 1px 5px rgba(0, 0, 0, 0.8);
+        }
+
+        .holo-message-title {
+            color: white;
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            text-shadow: 0 2px 15px rgba(0, 0, 0, 0.9);
+            line-height: 1.3;
+        }
+
+        .holo-message-text {
+            color: rgba(255, 255, 255, 0.95);
+            line-height: 1.6;
+            font-size: 0.95rem;
+            text-shadow: 0 1px 10px rgba(0, 0, 0, 0.8);
+            margin-bottom: 10px;
+        }
+
+        .holo-message-time {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.8rem;
+            text-shadow: 0 1px 5px rgba(0, 0, 0, 0.8);
+        }
+
+        /* الرسائل العادية تبقى كما هي */
+        .message:not(.hologram-style) {
+            /* التصميم الأصلي للرسائل العادية */
+        }
+
+        @media (max-width: 768px) {
+            .holo-image-container {
+                height: 220px;
+            }
+            
+            .holo-message-content {
+                padding: 15px;
+            }
+            
+            .holo-message-title {
+                font-size: 1.1rem;
+            }
+            
+            .holo-message-text {
+                font-size: 0.9rem;
+            }
+            
+            .holo-progress-circle {
+                width: 45px;
+                height: 45px;
+            }
+        }
+        
+        .nav-item i {
+            margin-bottom: 3px;
+            font-size: 1.1rem;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .nav-item span {
+            position: relative;
+            z-index: 2;
+        }
+        
+        .nav-item.active {
+            color: #1a2a6c;
+            background: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 4px 12px rgba(255, 255, 255, 0.6);
+            border-radius: 50px;
+            padding: 4px 15px;
+        }
+        
+        .nav-item:not(.active):hover {
+            color: white;
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .nav-item::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s ease, height 0.6s ease;
+        }
+        
+        .nav-item:active::before {
+            width: 300px;
+            height: 300px;
+        }
+        
+        .add-center {
+            background: linear-gradient(45deg, #ff8c00, #ff4500);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 4px 12px rgba(255, 140, 0, 0.4);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            font-size: 0.8rem;
+        }
+        
+        .add-center::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s ease, height 0.6s ease;
+        }
+        
+        .add-center:active::before {
+            width: 300px;
+            height: 300px;
+        }
+        
+        .add-center:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 18px rgba(255, 140, 0, 0.5);
+        }
+        
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #ff4500;
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: bold;
+            visibility: visible;
+            opacity: 1;
+            transition: opacity 0.3s ease;
+            z-index: 1002;
+            
+        }
+        
+        /* شارة الإشعارات على عناصر التنقل */
+        .nav-badge {
+            position: absolute;
+            top: 2px;
+            right: 20px;
+            background: linear-gradient(45deg, #ff4757, #ff3838);
+            color: white;
+            border-radius: 50%;
+            width: 15px;
+            height: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.5rem;
+            font-weight: bold;
+            box-shadow: 0 2px 6px rgba(255, 71, 87, 0.5);
+            z-index: 3;
+        }
+
+        .nav-badge.hidden {
+            display: none;
+        }
+        
+        /* علامة الرسائل غير المقروءة */
+        .conversation-unread {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            width: 10px;
+            height: 10px;
+            background: linear-gradient(45deg, #ff4757, #ff3838);
+            border-radius: 50%;
+            box-shadow: 0 2px 6px rgba(255, 71, 87, 0.5);
+        }
+        
+        /* ============ التصميم المتجاوب ============ */
+        @media (max-width: 768px) {
+            .container {
+                padding: 0;
+            }
+            
+            .conversations-list {
+                min-height: calc(100vh - 120px);
+            }
+            
+            .conversation-item {
+                padding: 10px;
+            }
+            
+            .conversation-avatar {
+                width: 40px;
+                height: 40px;
+                font-size: 1rem;
+            }
+            
+            
+            
+            /* تعديلات للشريط السفلي على الشاشات المتوسطة */
+            .bottom-nav {
+                padding: 10px 12px;
+                border-radius: 20px 20px 0 0;
+            }
+            
+            .nav-item {
+                padding: 5px 8px;
+                font-size: 0.7rem;
+            }
+            
+            .nav-item i {
+                font-size: 1rem;
+            }
+            
+            .add-center {
+                padding: 8px 16px;
+                font-size: 0.8rem;
+            }
+            
+            /* تعديلات للإشعار في الشريط السفلي */
+            .notification-badge {
+                width: 16px;
+                height: 16px;
+                font-size: 0.6rem;
+                top: -3px;
+                right: -3px;
+            }
+            
+            .nav-badge {
+                width: 13px;
+                height: 13px;
+                font-size: 0.5rem;
+                top: 1px;
+                right: 20px;
+            }
+            
+            .conversation-unread {
+                width: 8px;
+                height: 8px;
+                top: 12px;
+                left: 12px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .details-progress-circle {
+                width: 60px;
+                height: 60px;
+            }
+            
+            .details-progress-text {
+                font-size: 1rem;
+                /* ✅ إضافة هذه الأسطر */
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 100%;
+                height: 100%;
+            }
+            .referral-link-input {
+                font-size: 0.75rem;
+            }
+            .details-completion {
+                display: flex;
+                justify-content: center;
+                margin-bottom: 1px;
+                margin-top: 1px;
+            }
+            
+            .copy-link-btn {
+                padding: 8px 15px;
+                font-size: 0.85rem;
+            }
+            
+            .referral-user-name {
+                font-size: 0.85rem;
+            }
+            
+            .details-title {
+                font-size: 1.1rem;
+            }
+            
+            .details-message {
+                font-size: 0.9rem;
+                color: #333;
+                line-height: 1.8;
+                text-align: right;
+                margin-bottom: -5px;
+               
+            }
+            
+        
+            .container {
+                padding: 0;
+                margin: 0;
+                width: 100%;
+            }
+            .holo-image {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                display: block; /* مهم لإزالة المسافة السفلية */
+                margin: 0;
+                padding: 0;
+            }
+            #notificationsBadge {
+                top: 0.7
+                px;
+                right: 10px;
+                width: 12.5px;
+                height: 12.5px;
+                font-size: 0.5rem;
+            }
+            .holo-image-container {
+                position: relative;
+                width: 100%;
+                height: 280px;
+                overflow: hidden;
+                margin: 0; /* إزالة أي هامش */
+                padding: 0; /* إزالة أي حشو */
+                
+            }
+            
+            .conversations-list {
+                padding: 0;
+                margin: 0;
+                width: 100%;
+            }
+            .hero-section {
+                padding: 10px 10px 20px;
+                min-height: 100vh;
+                overflow: visible;
+                
+            }
+            body {
+                padding-bottom: 0 !important;
+                margin-bottom: 0 !important;
+            }
+
+            .hero-icon {
+                width: 40px;
+                height: 40px;
+                font-size: 1.2rem;
+                margin: 0 auto 8px;
+            }
+
+            .hero-title {
+                font-size: 1.1rem;
+                margin-bottom: 3px;
+            }
+
+            .hero-subtitle {
+                font-size: 0.75rem;
+                margin-bottom: 10px;
+            }
+
+            .quick-stats {
+                gap: 5px;
+                margin-top: 10px;
+            }
+
+            .stat-card {
+                padding: 6px 8px;
+                border-radius: 10px;
+            }
+
+            .stat-number {
+                font-size: 0.95rem;
+            }
+
+            .stat-label {
+                font-size: 0.6rem;
+                margin-top: 2px;
+            }
+            
+            .chat-icon-modern::before {
+                font-size: 22px;
+            }
+            
+            .chat-header-modern h1 {
+                font-size: 1.4rem;
+                margin-top: 15px;
+            }
+            
+            .conversation-item {
+                margin-bottom: 5px;
+                margin-left: 0;
+                margin-right: 0;
+                width: 100%;
+                padding: 0;
+                border-radius: 0;
+                
+            }
+            .conversation-item > div:first-child > div:last-child > p {
+                display: none !important;
+                
+            }
+            
+            .conversation-item > div:first-child {
+                height: 110px !important;
+                border-radius: 0 !important;
+                width: 100%;
+                margin: 0;
+                padding: 0;
+                
+            }
+            
+            
+            .conversations {
+                flex: 1;
+                overflow-y: auto;
+                padding: 20px 0 10px;
+                background: transparent; /* خلفية شفافة */
+                position: relative;
+                z-index: 2;
+            }
+            
+            
+            .conversation-avatar {
+                width: 40px;
+                height: 40px;
+                font-size: 1rem;
+            }
+            
+            
+            
+            /* تعديلات للشريط السفلي على الشاشات الصغيرة */
+            .bottom-nav {
+                padding: 3px 0px;
+            }
+            
+            .nav-item {
+                padding: 4px 6px;
+                font-size: 0.65rem;
+            }
+            
+            .nav-item i {
+                font-size: 0.9rem;
+            }
+            
+            .add-center {
+                padding: 6px 12px;
+                font-size: 0.7rem;
+            }
+            #bottomNavCompetitions {
+                position: relative;
+            }
+            .holo-progress-text {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 100%;
+                height: 100%;
+            }
+            /* تعديلات للإشعار في الشريط السفلي */
+            .notification-badge {
+                top: -100px;
+                right: -100px;
+                width: 14px;
+                height: 14px;
+                font-size: 0.55rem;
+                top: -2px;
+                right: -2px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 0;
+                line-height: 1;
+                
+            }
+            
+            
+            
+            .conversation-unread {
+                width: 7px;
+                height: 7px;
+                top: 10px;
+                left: 10px;
+            }
+        }
+        
+        @media (max-width: 350px) {
+            .container {
+                padding: 0;
+            }
+            
+            .conversations-list {
+                min-height: calc(100vh - 120px);
+            }
+            
+            .conversation-item {
+                padding: 10px;
+            }
+            
+            .conversation-avatar {
+                width: 40px;
+                height: 40px;
+                font-size: 1rem;
+            }
+            
+           
+            
+            /* تعديلات للشريط السفلي على الشاشات الصغيرة جداً */
+            .bottom-nav {
+                padding: 6px 8px;
+            }
+            
+            .nav-item {
+                padding: 3px 5px;
+                font-size: 0.6rem;
+            }
+            
+            .nav-item i {
+                font-size: 0.85rem;
+            }
+            
+            .add-center {
+                padding: 5px 10px;
+                font-size: 0.6rem;
+            }
+            
+            /* تعديلات للإشعار في الشريط السفلي */
+            .notification-badge {
+                width: 12px;
+                height: 12px;
+                font-size: 0.5rem;
+                top: -1px;
+                right: -1px;
+            }
+            
+            .nav-badge {
+                width: 10px;
+                height: 10px;
+                font-size: 0.45rem;
+                top: -1px;
+                right: 15px;
+            }
+            
+            .conversation-unread {
+                width: 6px;
+                height: 6px;
+                top: 8px;
+                left: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- قائمة المحادثات فقط -->
+        <div class="conversations-list">
+            <!-- رأس الصفحة العصري -->
+            <!-- رأس الصفحة الديناميكي -->
+            <div class="hero-section">
+                <div class="hero-bg">
+                    <div class="floating-circle circle-1"></div>
+                    <div class="floating-circle circle-2"></div>
+                    <div class="floating-circle circle-3"></div>
+                </div>
+                
+                <div class="hero-content">
+                    <div class="hero-icon">🎁</div>
+                    <h1 class="hero-title">المسابقات النشطة</h1>
+                    <p class="hero-subtitle">شارك الآن واربح جوائز قيمة</p>
+                    
+                    <div class="quick-stats">
+                        <div class="stat-card">
+                            <span class="stat-number">12</span>
+                            <span class="stat-label">مسابقة نشطة</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-number">5.2K</span>
+                            <span class="stat-label">مشارك</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-number">500K</span>
+                            <span class="stat-label">جوائز</span>
+                        </div>
+                    </div>
+                    <div class="conversations" id="conversationsList">
+                        <!-- المحادثات سيتم إضافتها ديناميكياً -->
+                    </div>
+                </div>
+            </div>
+            
+            <div class="conversations" id="conversationsList">
+                <!-- المحادثات سيتم إضافتها ديناميكياً -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- ============ نافذة الدردشة المنبثقة ============ -->
+    <div class="chat-popup" id="chatPopup">
+        <div class="chat-header">
+            <div class="chat-user-info">
+                <div class="chat-avatar" id="chatAvatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="chat-user-name" id="chatUserName"></div>
+            </div>
+            <button class="close-chat" id="closeChat">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        
+        
+        <div class="message-input-container">
+            <textarea class="message-input" id="messageInput" placeholder="اكتب رسالتك هنا..."></textarea>
+            <button class="send-btn" id="sendMessage">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
+    
+    <div class="overlay" id="overlay"></div>
+    
+    <!-- ============ الشريط السفلي الزجاجي المعدل ============ -->
+    <nav class="bottom-nav">
+        <a href="#" class="nav-item" id="mainweb">
+            <i class="fas fa-home"></i>
+            <span>الرئيسية</span>
+        </a>
+        <a href="#" class="nav-item active" id="bottomNavCompetitions">
+            <i class="fas fa-gift"></i>
+            <span>المسابقات</span>
+            <!-- إضافة شارة الإشعارات فوق أيقونة المسابقات -->
+            <div class="nav-badge hidden" id="chatBadge">0</div>
+        </a>
+        <a href="#" class="nav-item add-center" id="bottomNavAdd">
+            <i class="fas fa-plus-circle"></i>
+            <span>أضف إعلانك</span>
+        </a>
+        <a href="#" class="nav-item" id="bottomNavNotifications">
+            <i class="fas fa-bell"></i>
+            <span>الإشعارات</span>
+            <div class="nav-badge hidden" id="notificationsBadge">0</div>
+        </a>
+        <a href="#" class="nav-item" id="bottomNavAccount">
+            <i class="fas fa-user"></i>
+            <span>حسابي</span>
+        </a>
+    </nav>
+
+    <script>
+
+        // في بداية script في chat.html
+        const firebaseConfig = {
+            apiKey: "AIzaSyDZFR9qYKG3vbrrwhNIpy7N3Rfl4J5bxzA",
+            authDomain: "marjan-88c6e.firebaseapp.com",
+            projectId: "marjan-88c6e",
+            storageBucket: "marjan-88c6e.firebasestorage.app",
+            messagingSenderId: "92987465899",
+            appId: "1:92987465899:web:f91398c67f4812b67e57ee"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        let globalChatMessages = [];
+        let cachedCompetitions = {};
+        function updateNavBadge(type, notifications) {
+            const id = type === 'notifications' ? 'notificationsBadge' : null;
+            if (!id) return;
+
+            const badge = document.getElementById(id);
+            if (!badge) return;
+
+            // حساب الإشعارات غير المقروءة فقط
+            const unreadCount = notifications.filter(notification => !notification.read).length;
+
+            if (unreadCount > 0) {
+                badge.textContent = unreadCount > 99 ? '99+' : String(unreadCount);
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+        
+        // ============ مراقبة رسائل المحادثة العامة ============
+        function listenToGlobalChat() {
+            db.collection('global_chat')
+                .orderBy('timestamp', 'desc')
+                .onSnapshot(snapshot => {
+                    globalChatMessages = [];
+                    snapshot.forEach(doc => {
+                        globalChatMessages.push({
+                            id: doc.id,
+                            ...doc.data()
+                        });
+                    });
+                    updateChatBadge();
+                }, error => {
+                    console.error('خطأ في مراقبة المحادثة العامة:', error);
+                });
+        }
+        // ============ تحديث شارة رسائل المحادثة العامة ============
+        function updateChatBadge() {
+            const readMessages = JSON.parse(localStorage.getItem('readMessages')) || [];
+            const unreadCount = globalChatMessages.filter(msg => 
+                msg.type === 'admin_message' && !readMessages.includes(msg.id)
+            ).length;
+            
+            const badge = document.getElementById('chatBadge');
+            if (badge) {
+                if (unreadCount > 0) {
+                    badge.textContent = unreadCount > 99 ? '99+' : String(unreadCount);
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
+            }
+        }
+        // دالة لإضافة رسالة إلى نافذة الدردشة
+        function addMessageToChat(message) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message');
+            
+            const isAdminMessage = message.type === 'admin_message';
+            
+            // كل رسائل الإدارة ستكون بتصميم الهولوجرام
+            if (isAdminMessage) {
+                messageDiv.classList.add('hologram-style');
+                
+                const timestamp = message.timestamp?.toDate ? message.timestamp.toDate() : new Date(message.timestamp);
+                const time = formatTime(timestamp);
+                const completionPercentage = message.completionPercentage || 75;
+                const strokeDashoffset = 145 - (145 * completionPercentage / 100);
+                
+                // تحديد مصدر الصورة
+                let imageHtml = '';
+                if (message.attachment && message.attachment.type.startsWith('image/')) {
+                    imageHtml = `<img src="${message.attachment.url}" class="holo-image" alt="صورة المسابقة">`;
+                } else if (message.attachment && message.attachment.type.startsWith('video/')) {
+                    imageHtml = `<video src="${message.attachment.url}" class="holo-image" autoplay loop muted playsinline></video>`;
+                } else {
+                    // SVG افتراضي
+                    imageHtml = `
+                        <svg class="holo-image" viewBox="0 0 800 200" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+                            <defs>
+                                <linearGradient id="defaultSkyGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                                    <stop offset="0%" style="stop-color:#1e3c72;stop-opacity:1" />
+                                    <stop offset="100%" style="stop-color:#2a5298;stop-opacity:1" />
+                                </linearGradient>
+                                <linearGradient id="defaultMountainGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                                    <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+                                    <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+                                </linearGradient>
+                            </defs>
+                            <rect width="800" height="280" fill="url(#defaultSkyGradient)"/>
+                            <circle cx="700" cy="60" r="35" fill="#ffd700" opacity="0.9"/>
+                            <path d="M 0 200 Q 200 120, 400 160 T 800 140 L 800 280 L 0 280 Z" fill="#2a4d7c" opacity="0.6"/>
+                            <path d="M 0 230 Q 150 150, 300 190 T 600 180 T 800 210 L 800 280 L 0 280 Z" fill="url(#defaultMountainGradient)" opacity="0.8"/>
+                            <path d="M 0 250 L 200 170 L 350 230 L 500 180 L 650 240 L 800 200 L 800 280 L 0 280 Z" fill="#5a4a9f" opacity="0.9"/>
+                        </svg>
+                    `;
+                }
+                
+                messageDiv.innerHTML = `
+                    <div class="holo-image-container">
+                        ${imageHtml}
+                        <div class="holo-shine-effect"></div>
+                        <div class="holo-image-overlay"></div>
+                        
+                        <div class="holo-message-content">
+                            <div class="holo-message-header">
+                                <div class="holo-progress-circle">
+                                    <svg viewBox="0 0 60 60">
+                                        <defs>
+                                            <linearGradient id="holoProgressGradient${message.id}" x1="0%" y1="0%" x2="100%" y2="100%">
+                                                <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+                                                <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+                                            </linearGradient>
+                                        </defs>
+                                        <circle class="holo-progress-bg" cx="30" cy="30" r="23"></circle>
+                                        <circle class="holo-progress-fill" cx="30" cy="30" r="23" style="stroke-dashoffset: ${strokeDashoffset}; stroke: url(#holoProgressGradient${message.id})"></circle>
+                                    </svg>
+                                    <div class="holo-progress-text">${completionPercentage}%</div>
+                                </div>
+                                <div class="holo-sender-info">
+                                    <div class="holo-sender-name">${message.adminName || 'مرجان - الإدارة'}</div>
+                                    <div class="holo-completion-status">نسبة الاكتمال: ${completionPercentage}%</div>
+                                </div>
+                            </div>
+                            
+                            <h3 class="holo-message-title">${message.title || 'مسابقة جديدة'}</h3>
+                            <p class="holo-message-text">${message.message}</p>
+                            ${message.url ? `<div style="margin-bottom: 8px;"><a href="${message.url}" target="_blank" style="color: #ffed4e; text-decoration: underline; font-weight: 600;">اضغط هنا للمشاركة</a></div>` : ''}
+                            <div class="holo-message-time">${time}</div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                // رسائل المستخدم بالتصميم العادي
+                messageDiv.classList.add('message-sent');
+                
+                const timestamp = message.timestamp?.toDate ? message.timestamp.toDate() : new Date(message.timestamp);
+                const time = formatTime(timestamp);
+                
+                messageDiv.innerHTML = `
+                    <div>${message.message}</div>
+                    <div class="message-time">${time}</div>
+                `;
+            }
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // دالة إنشاء الرسالة العادية
+        function createNormalMessage(message) {
+            const timestamp = message.timestamp?.toDate ? message.timestamp.toDate() : new Date(message.timestamp);
+            const time = formatTime(timestamp);
+            
+            let messageContent = '';
+            if (message.title) {
+                messageContent += `<div style="font-weight: bold; margin-bottom: 5px;">${message.title}</div>`;
+            }
+            messageContent += `<div>${message.message}</div>`;
+            
+            if (message.attachment) {
+                if (message.attachment.type.startsWith('image/')) {
+                    messageContent += `<div style="margin-top: 10px;"><img src="${message.attachment.url}" style="max-width: 100%; max-height: 200px; border-radius: 5px;"></div>`;
+                } else if (message.attachment.type.startsWith('video/')) {
+                    messageContent += `<div style="margin-top: 10px;"><video src="${message.attachment.url}" controls style="max-width: 100%; max-height: 200px; border-radius: 5px;"></video></div>`;
+                }
+            }
+            
+            if (message.url) {
+                messageContent += `<div style="margin-top: 10px;"><a href="${message.url}" target="_blank" style="color: #1a2a6c; text-decoration: underline;">فتح الرابط</a></div>`;
+            }
+            
+            return `
+                ${messageContent}
+                <div class="message-time">${time}</div>
+            `;
+        }
+
+        // دالة إنشاء رسالة الهولوجرام
+        function createHologramMessage(message) {
+            const timestamp = message.timestamp?.toDate ? message.timestamp.toDate() : new Date(message.timestamp);
+            const time = formatTime(timestamp);
+            const completionPercentage = message.completionPercentage || 75;
+            const strokeDashoffset = 145 - (145 * completionPercentage / 100);
+            
+            // تحديد مصدر الصورة
+            let imageHtml = '';
+            if (message.attachment && message.attachment.type.startsWith('image/')) {
+                imageHtml = `<img src="${message.attachment.url}" class="holo-image" alt="صورة المسابقة">`;
+            } else if (message.attachment && message.attachment.type.startsWith('video/')) {
+                imageHtml = `<video src="${message.attachment.url}" class="holo-image" autoplay loop muted playsinline></video>`;
+            } else {
+                // SVG افتراضي إذا لم توجد صورة
+                imageHtml = createDefaultSVG();
+            }
+            
+            return `
+                <div class="holo-image-container">
+                    ${imageHtml}
+                    <div class="holo-shine-effect"></div>
+                    <div class="holo-image-overlay"></div>
+                    
+                    <div class="holo-message-content">
+                        <div class="holo-message-header">
+                            <div class="holo-progress-circle">
+                                <svg viewBox="0 0 60 60">
+                                    <defs>
+                                        <linearGradient id="holoProgressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                            <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+                                            <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+                                        </linearGradient>
+                                    </defs>
+                                    <circle class="holo-progress-bg" cx="30" cy="30" r="23"></circle>
+                                    <circle class="holo-progress-fill" cx="30" cy="30" r="23" style="stroke-dashoffset: ${strokeDashoffset}"></circle>
+                                </svg>
+                                <div class="holo-progress-text">${completionPercentage}%</div>
+                            </div>
+                            <div class="holo-sender-info">
+                                <div class="holo-sender-name">${message.adminName || 'مرجان - الإدارة'}</div>
+                                <div class="holo-completion-status">نسبة الاكتمال: ${completionPercentage}%</div>
+                            </div>
+                        </div>
+                        
+                        <h3 class="holo-message-title">${message.title || 'مسابقة جديدة'}</h3>
+                        <p class="holo-message-text">${message.message}</p>
+                        ${message.url ? `<div style="margin-bottom: 8px;"><a href="${message.url}" target="_blank" style="color: #ffed4e; text-decoration: underline; font-weight: 600;">اضغط هنا للمشاركة</a></div>` : ''}
+                        <div class="holo-message-time">${time}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // دالة إنشاء SVG افتراضي
+        function createDefaultSVG() {
+            return `
+                <svg class="holo-image" viewBox="0 0 800 200" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+                    <defs>
+                        <linearGradient id="defaultSkyGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" style="stop-color:#1e3c72;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#2a5298;stop-opacity:1" />
+                        </linearGradient>
+                        <linearGradient id="defaultMountainGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+                        </linearGradient>
+                    </defs>
+                    <rect width="800" height="280" fill="url(#defaultSkyGradient)"/>
+                    <circle cx="700" cy="60" r="35" fill="#ffd700" opacity="0.9"/>
+                    <path d="M 0 200 Q 200 120, 400 160 T 800 140 L 800 280 L 0 280 Z" fill="#2a4d7c" opacity="0.6"/>
+                    <path d="M 0 230 Q 150 150, 300 190 T 600 180 T 800 210 L 800 280 L 0 280 Z" fill="url(#defaultMountainGradient)" opacity="0.8"/>
+                    <path d="M 0 250 L 200 170 L 350 230 L 500 180 L 650 240 L 800 200 L 800 280 L 0 280 Z" fill="#5a4a9f" opacity="0.9"/>
+                </svg>
+            `;
+        }
+
+        function loadUserNotifications() {
+            const user = firebase.auth().currentUser;
+            
+            if (!user) {
+                return;
+            }
+
+            db.collection('users')
+                .where('email', '==', user.email)
+                .limit(1)
+                .get()
+                .then(snapshot => {
+                    if (snapshot.empty) {
+                        return;
+                    }
+
+                    const doc = snapshot.docs[0];
+                    const userData = doc.data();
+                    const notifications = userData.notifications || [];
+
+                    updateNavBadge('notifications', notifications);
+                })
+                .catch(error => {
+                    console.error('خطأ في تحميل الإشعارات:', error);
+                });
+        }
+      
+        // عناصر DOM
+        const chatPopup = document.getElementById('chatPopup');
+        const overlay = document.getElementById('overlay');
+        const closeChat = document.getElementById('closeChat');
+        const chatUserName = document.getElementById('chatUserName');
+        const chatAvatar = document.getElementById('chatAvatar');
+        const messagesContainer = document.getElementById('messagesContainer');
+        const messageInput = document.getElementById('messageInput');
+        const sendMessageBtn = document.getElementById('sendMessage');
+        const conversationsList = document.getElementById('conversationsList');
+        //const conversationSearch = document.getElementById('conversationSearch');
+        
+        // بيانات المحادثات
+        let globalMessages = [];
+        let unreadMessages = [];
+        
+        // تهيئة الصفحة
+        document.addEventListener('DOMContentLoaded', function() {
+            const mainweb = document.getElementById('mainweb');
+            const competitions = document.getElementById('bottomNavCompetitions');
+            const notifications = document.getElementById('bottomNavNotifications');
+            const account = document.getElementById('bottomNavAccount');
+            const addBtn = document.getElementById('bottomNavAdd');
+            
+            if (mainweb) {
+                mainweb.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    window.location.href = 'index.html';
+                });
+            }
+            
+            if (addBtn) {
+                addBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    window.location.href = 'Add.html';
+                });
+            }
+            
+            if (notifications) {
+                notifications.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    window.location.href = 'Notifications.html';
+                });
+            }
+            
+            if (account) {
+                account.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    window.location.href = 'Account.html';
+                });
+            }
+            
+            // إضافة هذا القسم
+            firebase.auth().onAuthStateChanged((user) => {
+                if (user) {
+                    loadUserNotifications(); // ✅ لتحميل الإشعارات مرة واحدة
+                    listenToNotificationsUpdates(); // ✅ للاستماع للتحديثات الفورية
+                    loadGlobalChat();
+                }
+            });
+        });
+        
+        // إعداد مستمعي الأحداث
+        function setupEventListeners() {
+            closeChat.addEventListener('click', closeChatWindow);
+            overlay.addEventListener('click', closeChatWindow);
+            
+            sendMessageBtn.addEventListener('click', function() {
+                const message = messageInput.value.trim();
+                
+                if (message) {
+                    // إرسال رسالة جديدة
+                    sendUserMessage(message);
+                    messageInput.value = '';
+                }
+            });
+            
+            messageInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendMessageBtn.click();
+                }
+            });
+            
+            // البحث في المحادثات
+            //conversationSearch.addEventListener('input', function() {
+                //filterConversations(this.value);
+            //});
+            
+            // عند الضغط على أيقونة المسابقات في الشريط السفلي
+            document.getElementById('bottomNavCompetitions').addEventListener('click', function(e) {
+                e.preventDefault();
+                // إغلاق نافذة الدردشة إذا كانت مفتوحة
+                if (chatPopup.classList.contains('active')) {
+                    closeChatWindow();
+                }
+                
+                // إعادة تحميل المحادثات
+                loadGlobalChat();
+            });
+        }
+        
+        // تحميل المحادثات العامة من Firebase
+        function loadGlobalChat() {
+            conversationsList.innerHTML = '';
+            
+            db.collection('global_chat')
+            .orderBy('timestamp', 'desc')
+            .onSnapshot(async snapshot => {  // ⬅️ أضف async هنا
+                conversationsList.innerHTML = '';
+                globalMessages = [];
+                unreadMessages = [];
+                
+                if (snapshot.empty) {
+                    conversationsList.innerHTML = `
+                        <div style="text-align: center; padding: 20px; color: #666;">
+                            <i class="fas fa-comments" style="font-size: 3rem; margin-bottom: 15px; color: #ccc;"></i>
+                            <p>لا توجد رسائل عامة بعد</p>
+                            <p style="font-size: 0.9rem; color: #888;">سيظهر هنا الرسائل العامة من الإدارة</p>
+                        </div>
+                    `;
+                    updateChatBadge();
+                    return;
+                }
+                
+                // ⬇️ أضف هذا السطر هنا
+                const currentUser = firebase.auth().currentUser;
+                
+                // الحصول على بيانات المستخدم مرة واحدة
+                let userData = null;
+                if (currentUser) {
+                    try {
+                        const userDoc = await db.collection('users').doc(currentUser.uid).get();
+                        if (userDoc.exists) {
+                            userData = userDoc.data();
+                            console.log('✅ بيانات المستخدم في loadGlobalChat:', userData); // للتشخيص
+                        }
+                    } catch (error) {
+                        console.error('خطأ في جلب بيانات المستخدم:', error);
+                    }
+                }
+                
+                snapshot.forEach(doc => {
+                    const docData = doc.data();
+                    const message = {
+                        ...docData,
+                        id: doc.id  // ✅ ضع id في النهاية لضمان عدم استبداله
+                    };
+                    cachedCompetitions[message.id] = message;
+                    
+                    // التحقق إذا كانت الرسالة غير مقروءة
+                    const readMessages = JSON.parse(localStorage.getItem('readMessages')) || [];
+                    if (!readMessages.includes(message.id) && message.type === 'admin_message') {
+                        unreadMessages.push(message.id);
+                    }
+                    
+                    const conversationItem = document.createElement('div');
+                    conversationItem.className = 'conversation-item';
+                    conversationItem.setAttribute('data-id', doc.id);
+                    
+                    // تحديد أيقونة المرسل
+                    let avatarContent = '';
+                    let senderName = '';
+                    
+                    if (message.type === 'admin_message') {
+                        avatarContent = `<i class="fas fa-crown" style="color: gold;"></i>`;
+                        senderName = message.adminName || 'مرجان - الإدارة';
+                    } else {
+                        avatarContent = `<i class="fas fa-user"></i>`;
+                        senderName = message.senderName || 'مستخدم';
+                    }
+                    
+                    // إضافة علامة الرسائل غير المقروءة
+                    const unreadIndicator = !readMessages.includes(message.id) && message.type === 'admin_message' ? 
+                        '<div class="conversation-unread"></div>' : '';
+                    
+                    // ⬇️ أضف هذا الجزء هنا - حساب نسبة الاكتمال
+                    let displayPercentage = 0;
+                    // حساب النسبة بناءً على البيانات المحفوظة
+                    if (userData && userData.competitions && userData.competitions[message.id]) {
+                        const competitionData = userData.competitions[message.id];
+                        
+                        // إذا كانت النسبة محفوظة، استخدمها
+                        if (competitionData.percentage !== undefined) {
+                            displayPercentage = competitionData.percentage;
+                        } else {
+                            // وإلا، احسبها من عدد الإحالات الناجحة
+                            const successfulRefs = competitionData.successfulReferrals || [];
+                            const successCount = successfulRefs.filter(r => r.status === 'success').length;
+                            const totalRequired = 10; // يمكن تغييره
+                            displayPercentage = Math.round((successCount / totalRequired) * 100);
+                        }
+                    }
+                    
+                    const completionPercentage = displayPercentage;
+                    const strokeDashoffset = 145 - (145 * completionPercentage / 100);
+
+                    // تحديد الصورة
+                    let imageHtml = '';
+                    if (message.attachment && message.attachment.type.startsWith('image/')) {
+                        imageHtml = `<img src="${message.attachment.url}" style="width: 100%; height: 100%; object-fit: cover; display: block; position: absolute; top: 0; left: 0;">`;
+                    } else {
+                        imageHtml = `
+                            <svg style="width: 100%; height: 100%; position: absolute; top: 0; left: 0; display: block;" viewBox="0 0 800 350" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+                                <defs>
+                                    <linearGradient id="sky${message.id}" x1="0%" y1="0%" x2="0%" y2="100%">
+                                        <stop offset="0%" style="stop-color:#1e3c72;stop-opacity:1" />
+                                        <stop offset="100%" style="stop-color:#2a5298;stop-opacity:1" />
+                                    </linearGradient>
+                                    <linearGradient id="mountain${message.id}" x1="0%" y1="0%" x2="0%" y2="100%">
+                                        <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+                                        <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+                                    </linearGradient>
+                                </defs>
+                                <rect width="800" height="350" fill="url(#sky${message.id})"/>
+                                <circle cx="700" cy="80" r="40" fill="#ffd700" opacity="0.9"/>
+                                <path d="M 0 240 Q 200 150, 400 190 T 800 170 L 800 350 L 0 350 Z" fill="#2a4d7c" opacity="0.6"/>
+                                <path d="M 0 270 Q 150 180, 300 220 T 600 210 T 800 250 L 800 350 L 0 350 Z" fill="url(#mountain${message.id})" opacity="0.8"/>
+                                <path d="M 0 300 L 200 210 L 350 270 L 500 220 L 650 290 L 800 250 L 800 350 L 0 350 Z" fill="#5a4a9f" opacity="0.9"/>
+                            </svg>
+                        `;
+                    }
+
+                    conversationItem.innerHTML = `
+                    <div style="position: relative; overflow: hidden; border-radius: 20px; height: 200px; width: 100%;">
+                            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; transform: scale(1); transform-origin: center;">
+                                ${imageHtml}
+                            </div>
+                            
+                            <!-- تم حذف طبقة التعتيم بالكامل -->
+                            
+                            <div style="position: absolute; bottom: 0; right: 20px; padding: 15px; z-index: 2; max-width: 70%;">
+                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                    <div style="width: 45px; height: 45px; position: relative; flex-shrink: 0;">
+                                        <svg viewBox="0 0 60 60" style="transform: rotate(-90deg); width: 100%; height: 100%;">
+                                            <defs>
+                                                <linearGradient id="grad${message.id}" x1="0%" y1="0%" x2="100%" y2="100%">
+                                                    <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+                                                    <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+                                                </linearGradient>
+                                            </defs>
+                                            <circle cx="30" cy="30" r="23" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="4"></circle>
+                                            <circle cx="30" cy="30" r="23" fill="none" stroke="url(#grad${message.id})" stroke-width="4" stroke-linecap="round" stroke-dasharray="145" stroke-dashoffset="${strokeDashoffset}"></circle>
+                                        </svg>
+                                        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 0.7rem; font-weight: 700; text-shadow: 0 3px 12px rgba(0,0,0,1), 0 0 8px rgba(0,0,0,0.8);">${completionPercentage}%</div>
+                                    </div>
+                                    <div style="flex: 1;">
+                                        <div style="color: white; font-size: 1rem; font-weight: 600; text-shadow: 0 3px 15px rgba(0,0,0,1), 0 0 10px rgba(0,0,0,0.9); margin-bottom: 2px; text-align: right; padding-right: 5px;">${message.title || 'مسابقة جديدة'}</div>
+                                        <div style="color: rgba(255,255,255,0.95); font-size: 0.75rem; text-shadow: 0 2px 10px rgba(0,0,0,1), 0 0 8px rgba(0,0,0,0.8);">نسبة الاكتمال: ${completionPercentage}%</div>
+                                    </div>
+                                </div>
+                                
+                                
+                                <p style="color: white; font-size: 0.95rem; line-height: 1.6; margin-bottom: 10px; text-shadow: 0 2px 15px rgba(0,0,0,1), 0 0 10px rgba(0,0,0,0.8); overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">${message.message}</p>
+                                <div style="color: rgba(255,255,255,0.9); font-size: 0.8rem; text-shadow: 0 2px 10px rgba(0,0,0,1), 0 0 8px rgba(0,0,0,0.8);">${formatTime(message.timestamp?.toDate())}</div>
+                            </div>
+                        </div>
+                        ${unreadIndicator}
+                    `;
+                    
+                    conversationItem.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        toggleCardExpansion(conversationItem, message);
+                    });
+                    
+                    conversationsList.appendChild(conversationItem);
+                });
+                
+                updateChatBadge();
+            }, error => {
+                console.error('Error loading global chat:', error);
+                conversationsList.innerHTML = `
+                    <div style="text-align: center; padding: 20px; color: red;">
+                        <p>خطأ في تحميل المحادثات</p>
+                    </div>
+                `;
+            });
+        }
+        // إغلاق جميع البطاقات الموسعة
+        function closeAllExpandedCards() {
+            document.querySelectorAll('.conversation-item.expanded').forEach(card => {
+                card.classList.remove('expanded');
+                const details = card.querySelector('.conversation-details');
+                if (details) {
+                    details.style.height = '0';
+                }
+            });
+        }
+
+        // توسيع/طي البطاقة
+        // توسيع/طي البطاقة
+        async function toggleCardExpansion(cardElement, message) {
+            const isExpanded = cardElement.classList.contains('expanded');
+            
+            // ✅ تسجيل الرسالة كمقروءة عند الضغط
+            if (!isExpanded && message.type === 'admin_message') {
+                markMessageAsRead(message.id);
+                
+                const unreadDot = cardElement.querySelector('.conversation-unread');
+                if (unreadDot) {
+                    unreadDot.remove();
+                }
+            }
+            
+            closeAllExpandedCards();
+            
+            if (!isExpanded) {
+                const currentUser = firebase.auth().currentUser;
+                
+                // ✅ تحقق من وجود المسابقة في global_chat أولاً
+                console.log('🔍 التحقق من المسابقة:', message.id);
+                
+                try {
+                    const competitionDoc = await db.collection('global_chat').doc(message.id).get();
+                    
+                    if (!competitionDoc.exists) {
+                        console.error('❌ المسابقة غير موجودة:', message.id);
+                        alert('عذراً، هذه المسابقة لم تعد متاحة');
+                        return;
+                    }
+                    
+                    console.log('✅ المسابقة موجودة:', competitionDoc.data());
+                    
+                } catch (error) {
+                    console.error('❌ خطأ في التحقق من المسابقة:', error);
+                    return;
+                }
+                
+                // الحصول على نسبة الاكتمال من بيانات المستخدم
+                let displayPercentage = 0;
+                if (currentUser) {
+                    try {
+                        const userDoc = await db.collection('users').doc(currentUser.uid).get();
+                        if (userDoc.exists) {
+                            const userData = userDoc.data();
+                            displayPercentage = userData.competitions?.[message.id]?.percentage || 0;
+                            console.log('✅ نسبة الاكتمال:', displayPercentage);
+                        }
+                    } catch (error) {
+                        console.error('خطأ في جلب نسبة الاكتمال:', error);
+                    }
+                }
+                
+                const completionPercentage = displayPercentage;
+                const strokeDashoffset = 145 - (145 * completionPercentage / 100);
+                
+                cardElement.classList.add('expanded');
+                
+                let detailsDiv = cardElement.querySelector('.conversation-details');
+                if (!detailsDiv) {
+                    detailsDiv = document.createElement('div');
+                    detailsDiv.className = 'conversation-details';
+                    
+                    detailsDiv.innerHTML = `
+                        <div class="details-completion">
+                            <div class="details-progress-circle">
+                                <svg viewBox="0 0 60 60">
+                                    <defs>
+                                        <linearGradient id="detailsGrad${message.id}" x1="0%" y1="0%" x2="100%" y2="100%">
+                                            <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+                                            <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+                                        </linearGradient>
+                                    </defs>
+                                    <circle cx="30" cy="30" r="23" fill="none" stroke="rgba(102, 126, 234, 0.2)" stroke-width="4"></circle>
+                                    <circle cx="30" cy="30" r="23" fill="none" stroke="url(#detailsGrad${message.id})" stroke-width="4" stroke-linecap="round" stroke-dasharray="145" stroke-dashoffset="${strokeDashoffset}"></circle>
+                                </svg>
+                                <div class="details-progress-text">${completionPercentage}%</div>
+                            </div>
+                        </div>
+                        
+                        <div class="details-title">${message.title || 'مسابقة جديدة'}</div>
+                        
+                        <div class="details-message">${message.message}</div>
+                        
+                        ${message.url ? `
+                            <div class="details-link">
+                                <a href="${message.url}" target="_blank">
+                                    <i class="fas fa-external-link-alt"></i> اضغط هنا للمشاركة
+                                </a>
+                            </div>
+                        ` : ''}
+                        
+                        <div class="referral-section" id="referralSection${message.id}">
+                            <div class="referral-link-container">
+                                <div class="referral-link-title">
+                                    <i class="fas fa-share-alt"></i> شارك رابط الإحالة مع أصدقائك
+                                </div>
+                                <div class="referral-link-box">
+                                    <input type="text" class="referral-link-input" id="referralLink${message.id}" readonly value="جاري التحميل...">
+                                    <button class="copy-link-btn" onclick="copyReferralLink('${message.id}', event)">
+                                        <i class="fab fa-whatsapp"></i> مشاركة
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="referrals-list-container">
+                                <div class="referrals-list-title">
+                                    <i class="fas fa-users"></i> الإحالات الناجحة
+                                </div>
+                                <div class="referrals-list" id="referralsList${message.id}">
+                                    <div class="no-referrals">جاري التحميل...</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    cardElement.appendChild(detailsDiv);
+                    
+                    // ✅ تحميل بيانات الإحالة مع message.id الصحيح
+                    loadReferralData(message.id);
+                }
+                
+                setTimeout(() => {
+                    detailsDiv.style.height = detailsDiv.scrollHeight + 'px';
+                }, 10);
+                
+                setTimeout(() => {
+                    cardElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }, 100);
+            }
+        }
+        
+        // إرسال رسالة من المستخدم
+        async function sendUserMessage(messageText) {
+            const userData = JSON.parse(localStorage.getItem('userData')) || {};
+            const userName = userData.firstName && userData.lastName 
+                ? `${userData.firstName} ${userData.lastName}` 
+                : 'مستخدم مرجان';
+            
+            const messageData = {
+                senderId: localStorage.getItem('userUID') || 'user123',
+                senderName: userName,
+                message: messageText,
+                timestamp: firebase.firestore.Timestamp.now(),
+                type: 'user_message'
+            };
+            
+            try {
+                await db.collection('global_chat').add(messageData);
+            } catch (error) {
+                console.error('Error sending message:', error);
+                alert('حدث خطأ أثناء إرسال الرسالة: ' + error.message);
+            }
+        }
+        
+        // تصفية المحادثات حسب النص
+        function filterConversations(searchTerm) {
+            const allConversations = document.querySelectorAll('.conversation-item');
+            
+            allConversations.forEach(conversation => {
+                const preview = conversation.querySelector('.conversation-preview').textContent;
+                if (preview.includes(searchTerm)) {
+                    conversation.style.display = 'flex';
+                } else {
+                    conversation.style.display = 'none';
+                }
+            });
+        }
+        // توليد رابط الإحالة
+        function generateReferralLink(competitionId, userReferralCode) {
+            const baseUrl = window.location.origin + window.location.pathname.replace('chat.html', 'index.html');
+            return `${baseUrl}?ref=${userReferralCode}&competition=${competitionId}`;
+        }
+
+        // نسخ رابط الإحالة
+        function copyReferralLink(messageId, event) {
+            event.stopPropagation();
+            
+            const input = document.getElementById(`referralLink${messageId}`);
+            const referralLink = input.value;
+            
+            if (!referralLink || referralLink === 'جاري التحميل...') {
+                alert('الرابط غير جاهز');
+                return;
+            }
+            
+            // فتح واتساب مباشرة بدون رسالة نصية
+            const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(referralLink)}`;
+            window.open(whatsappUrl, '_blank');
+            
+            const btn = event.target.closest('.copy-link-btn');
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-check"></i> تم المشاركة';
+            btn.classList.add('copied');
+            
+            setTimeout(() => {
+                btn.innerHTML = originalHTML;
+                btn.classList.remove('copied');
+            }, 2000);
+        }
+
+        // تحميل بيانات الإحالة
+        // تحميل بيانات الإحالة
+        // تحميل بيانات الإحالة
+        async function loadReferralData(competitionId) {
+            const currentUser = firebase.auth().currentUser;
+            
+            if (!currentUser) {
+                document.getElementById(`referralLink${competitionId}`).value = 'يجب تسجيل الدخول أولاً';
+                document.getElementById(`referralsList${competitionId}`).innerHTML = '<div class="no-referrals">يجب تسجيل الدخول لعرض الإحالات</div>';
+                return;
+            }
+            
+            // ✅ إضافة console.log للتشخيص
+            console.log('📌 loadReferralData - competitionId:', competitionId);
+            console.log('📌 currentUser.email:', currentUser.email);
+            
+            try {
+                // ✅ التحقق من وجود المسابقة أولاً
+                const competitionDoc = await db.collection('global_chat').doc(competitionId).get();
+                
+                if (!competitionDoc.exists) {
+                    console.error('❌ المسابقة غير موجودة في global_chat:', competitionId);
+                    document.getElementById(`referralLink${competitionId}`).value = 'خطأ: المسابقة غير موجودة';
+                    document.getElementById(`referralsList${competitionId}`).innerHTML = '<div class="no-referrals">المسابقة غير متاحة</div>';
+                    return;
+                }
+                
+                console.log('✅ المسابقة موجودة:', competitionDoc.data());
+                
+                // البحث بالإيميل بدلاً من UID
+                const userSnapshot = await db.collection('users')
+                    .where('email', '==', currentUser.email)
+                    .limit(1)
+                    .get();
+                
+                if (userSnapshot.empty) {
+                    console.error('بيانات المستخدم غير موجودة');
+                    document.getElementById(`referralLink${competitionId}`).value = 'خطأ: بيانات المستخدم غير موجودة';
+                    document.getElementById(`referralsList${competitionId}`).innerHTML = '<div class="no-referrals">خطأ في تحميل البيانات</div>';
+                    return;
+                }
+                
+                const userDoc = userSnapshot.docs[0];
+                const userData = userDoc.data();
+                const userDocId = userDoc.id;
+                
+                console.log('✅ تم جلب بيانات المستخدم:', userData);
+                
+                let userReferralCode = userData.referralCode;
+                
+                // إنشاء كود إحالة إذا لم يكن موجوداً
+                if (!userReferralCode) {
+                    userReferralCode = currentUser.uid.substring(0, 8).toUpperCase();
+                    await db.collection('users').doc(userDocId).update({
+                        referralCode: userReferralCode
+                    });
+                }
+                
+                // إنشاء قسم المسابقة إذا لم يكن موجوداً
+                if (!userData.competitions || !userData.competitions[competitionId]) {
+                    const referralLink = generateReferralLink(competitionId, userReferralCode);
+                    
+                    // ✅ الحصول على rewardPoints من المسابقة
+                    const rewardPoints = competitionDoc.data().rewardPoints || 0;
+                    
+                    console.log(`✅ نقاط المكافأة للمسابقة ${competitionId}: ${rewardPoints}`);
+                    
+                    await db.collection('users').doc(userDocId).set({
+                        competitions: {
+                            [competitionId]: {
+                                competitionId: competitionId,
+                                percentage: 0,
+                                referralLink: referralLink,
+                                successfulReferrals: [],
+                                rewardPoints: rewardPoints,
+                                rewardClaimed: false
+                            }
+                        }
+                    }, { merge: true });
+                    
+                    document.getElementById(`referralLink${competitionId}`).value = referralLink;
+                    document.getElementById(`referralsList${competitionId}`).innerHTML = '<div class="no-referrals">لا توجد إحالات ناجحة بعد</div>';
+                    
+                    // ✅ التحقق من الجائزة فور التحميل
+                    checkAndAwardPoints(competitionId, userDocId);
+                } else {
+                    // المسابقة موجودة - عرض البيانات
+                    const competitionData = userData.competitions[competitionId];
+                    const referralLink = competitionData.referralLink || generateReferralLink(competitionId, userReferralCode);
+                    
+                    document.getElementById(`referralLink${competitionId}`).value = referralLink;
+                    displaySuccessfulReferrals(competitionId, competitionData.successfulReferrals || []);
+                    
+                    // ✅ التحقق من الجائزة
+                    checkAndAwardPoints(competitionId, userDocId);
+                }
+                
+            } catch (error) {
+                console.error('خطأ في تحميل بيانات الإحالة:', error);
+                document.getElementById(`referralLink${competitionId}`).value = 'حدث خطأ: ' + error.message;
+                document.getElementById(`referralsList${competitionId}`).innerHTML = '<div class="no-referrals">حدث خطأ في التحميل</div>';
+            }
+        }
+
+        // عرض قائمة الإحالات الناجحة
+        function displaySuccessfulReferrals(competitionId, referrals) {
+            const container = document.getElementById(`referralsList${competitionId}`);
+            
+            if (!referrals || referrals.length === 0) {
+                container.innerHTML = '<div class="no-referrals">لا توجد إحالات ناجحة بعد</div>';
+                return;
+            }
+            
+            // ✅ عرض أول 10 مستخدمين فقط
+            const limitedReferrals = referrals.slice(0, 10);
+            
+            container.innerHTML = limitedReferrals.map((referral, index) => {
+                const isSuccess = referral.status === 'success';
+                const iconClass = isSuccess ? 'fa-check-circle' : 'fa-times-circle';
+                const iconColor = isSuccess ? '#4CAF50' : '#ff4757';
+                
+                // ✅ زر حذف للفاشلين أو نص للناجحين
+                const middleButton = isSuccess 
+                    ? `<span style="color: #4CAF50; font-size: 0.85rem; font-weight: 600;">✓ تمت إضافة نقاط الإحالة</span>`
+                    : `<button class="delete-user-btn" onclick="deleteFailedReferral('${competitionId}', ${index}, event)" style="background: #ff4757; color: white; border: none; padding: 5px 10px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; font-weight: 600; transition: all 0.3s;">
+                        <i class="fas fa-trash-alt" style="font-size: 0.8rem;"></i> حذف
+                    </button>`;
+                
+                return `
+                    <div class="referral-item">
+                        <div class="referral-user-info">
+                            <div class="referral-user-name">${referral.name}</div>
+                        </div>
+                        <div style="flex: 1; display: flex; justify-content: center;">
+                            ${middleButton}
+                        </div>
+                        <div class="referral-status-icon ${isSuccess ? 'completed' : 'failed'}" style="color: ${iconColor};">
+                            <i class="fas ${iconClass}"></i>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        // ✅ دالة التحقق من الجائزة وإضافة النقاط
+        // ✅ دالة التحقق من الجائزة وإضافة النقاط (محسّنة)
+        async function checkAndAwardPoints(competitionId, userDocId = null) {
+            const currentUser = firebase.auth().currentUser;
+            if (!currentUser) return;
+            
+            // ✅ إضافة console.log للتشخيص
+            console.log('🎁 checkAndAwardPoints - competitionId:', competitionId);
+            
+            try {
+                // ✅ التحقق من وجود المسابقة أولاً
+                const competitionDoc = await db.collection('global_chat').doc(competitionId).get();
+                
+                if (!competitionDoc.exists) {
+                    console.error('❌ المسابقة غير موجودة في global_chat:', competitionId);
+                    return;
+                }
+                
+                console.log('✅ المسابقة موجودة في checkAndAwardPoints');
+                
+                // باقي الكود...
+                if (!userDocId) {
+                    const userSnapshot = await db.collection('users')
+                        .where('email', '==', currentUser.email)
+                        .limit(1)
+                        .get();
+                    
+                    if (userSnapshot.empty) return;
+                    userDocId = userSnapshot.docs[0].id;
+                    localStorage.setItem('userDocId', userDocId);
+                }
+                
+                const userDoc = await db.collection('users').doc(userDocId).get();
+                if (!userDoc.exists) return;
+                
+                const userData = userDoc.data();
+                const competitionData = userData.competitions?.[competitionId];
+                
+                if (!competitionData) return;
+                
+                if (competitionData.percentage >= 100 && !competitionData.rewardClaimed) {
+                    const rewardPoints = competitionDoc.data().rewardPoints || 0;
+                    
+                    if (rewardPoints <= 0) {
+                        console.warn('⚠️ لا توجد نقاط مكافأة لهذه المسابقة');
+                        return;
+                    }
+                    
+                    const currentBalance = userData.currentBalance || 0;
+                    const newBalance = currentBalance + rewardPoints;
+                    
+                    console.log(`💰 الرصيد الحالي: ${currentBalance}`);
+                    console.log(`🎁 نقاط المكافأة: ${rewardPoints}`);
+                    console.log(`✨ الرصيد الجديد: ${newBalance}`);
+                    
+                    await db.collection('users').doc(userDocId).update({
+                        currentBalance: newBalance,
+                        [`competitions.${competitionId}.rewardClaimed`]: true,
+                        [`competitions.${competitionId}.rewardClaimedAt`]: new Date().toISOString()
+                    });
+                    
+                    console.log(`✅ تم إضافة ${rewardPoints} نقطة للمستخدم!`);
+                    alert(`🎉 مبروك! لقد أكملت المسابقة وحصلت على ${rewardPoints} نقطة ذهبية!`);
+                }
+                
+            } catch (error) {
+                console.error('❌ خطأ في التحقق من الجائزة:', error);
+            }
+        }
+        async function deleteFailedReferral(competitionId, referralIndex, event) {
+            event.stopPropagation(); // منع إغلاق البطاقة
+            
+            const currentUser = firebase.auth().currentUser;
+            if (!currentUser) {
+                alert('يجب تسجيل الدخول أولاً');
+                return;
+            }
+            
+            if (!confirm('هل أنت متأكد من حذف هذا المستخدم؟')) {
+                return;
+            }
+            
+            try {
+                // البحث بالإيميل
+                const userSnapshot = await db.collection('users')
+                    .where('email', '==', currentUser.email)
+                    .limit(1)
+                    .get();
+                
+                if (userSnapshot.empty) {
+                    alert('خطأ: بيانات المستخدم غير موجودة');
+                    return;
+                }
+                
+                const userDoc = userSnapshot.docs[0];
+                const userData = userDoc.data();
+                const userDocId = userDoc.id;
+                
+                // الحصول على قائمة المحالين الحالية
+                let successfulReferrals = userData.competitions?.[competitionId]?.successfulReferrals || [];
+                
+                // حذف المستخدم من القائمة
+                successfulReferrals.splice(referralIndex, 1);
+                
+                // تحديث Firestore
+                await db.collection('users').doc(userDocId).update({
+                    [`competitions.${competitionId}.successfulReferrals`]: successfulReferrals
+                });
+                
+                // تحديث العرض
+                displaySuccessfulReferrals(competitionId, successfulReferrals);
+                
+                alert('✓ تم حذف المستخدم بنجاح');
+                
+            } catch (error) {
+                console.error('خطأ في حذف المستخدم:', error);
+                alert('حدث خطأ: ' + error.message);
+            }
+        }
+
+        // حفظ كود الإحالة في userData عند أول تحميل
+        firebase.auth().onAuthStateChanged(async (user) => {
+            if (user) {
+                const userDoc = await db.collection('users').doc(user.uid).get();
+                
+                if (userDoc.exists) {
+                    const userData = userDoc.data();
+                    
+                    // توليد كود إحالة إذا لم يكن موجوداً
+                    if (!userData.referralCode) {
+                        const referralCode = user.uid.substring(0, 8).toUpperCase();
+                        await db.collection('users').doc(user.uid).update({
+                            referralCode: referralCode
+                        });
+                    }
+                }
+            }
+        });
+        
+        // دالة لفتح نافذة الدردشة
+        function openChat(message) {
+            // تعيين اسم المرسل
+            if (message.type === 'admin_message') {
+                chatUserName.textContent = message.adminName || 'مرجان - الإدارة';
+                chatAvatar.innerHTML = '<i class="fas fa-crown" style="color: gold;"></i>';
+                chatAvatar.style.background = '#1a2a6c';
+            } else {
+                chatUserName.textContent = message.senderName || 'مستخدم';
+                chatAvatar.innerHTML = '<i class="fas fa-user"></i>';
+                chatAvatar.style.background = '#888';
+            }
+            
+            // مسح المحادثة السابقة
+            messagesContainer.innerHTML = '';
+            
+            // عرض الرسالة المحددة
+            addMessageToChat(message);
+            
+            // تحديد الرسالة كمقروءة
+            markMessageAsRead(message.id);
+            
+            // إظهار نافذة الدردشة
+            chatPopup.classList.add('active');
+            overlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        // دالة لإضافة رسالة إلى نافذة الدردشة
+        
+        
+        // دالة لإغلاق نافذة الدردشة
+        function closeChatWindow() {
+            chatPopup.classList.remove('active');
+            overlay.classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+        
+        // تنسيق الوقت
+        function formatTime(timestamp) {
+            if (!timestamp) return 'الآن';
+            
+            const date = new Date(timestamp);
+            const now = new Date();
+            const diff = now - date;
+            
+            if (diff < 60000) { // أقل من دقيقة
+                return 'الآن';
+            } else if (diff < 3600000) { // أقل من ساعة
+                return Math.floor(diff / 60000) + ' د';
+            } else if (diff < 86400000) { // أقل من يوم
+                return Math.floor(diff / 3600000) + ' س';
+            } else if (diff < 604800000) { // أقل من أسبوع
+                const days = Math.floor(diff / 86400000);
+                return days === 1 ? 'أمس' : days + ' أيام';
+            } else {
+                return date.toLocaleDateString('ar-SA');
+            }
+        }
+        
+        // تحديد الرسالة كمقروءة
+        function markMessageAsRead(messageId) {
+            const readMessages = JSON.parse(localStorage.getItem('readMessages')) || [];
+            if (!readMessages.includes(messageId)) {
+                readMessages.push(messageId);
+                localStorage.setItem('readMessages', JSON.stringify(readMessages));
+                
+                // تحديث العلامة في قائمة المحادثات
+                const conversationItem = document.querySelector(`[data-id="${messageId}"]`);
+                if (conversationItem) {
+                    const unreadIndicator = conversationItem.querySelector('.conversation-unread');
+                    if (unreadIndicator) {
+                        unreadIndicator.remove();
+                    }
+                }
+                
+                // تحديث شارة المسابقات
+                updateChatBadge();
+            }
+        }
+        
+        // تحديث شارة المسابقات
+        function updateChatBadge() {
+            // حساب عدد الرسائل غير المقروءة من الإدارة
+            const readMessages = JSON.parse(localStorage.getItem('readMessages')) || [];
+            const unreadCount = globalMessages.filter(msg => 
+                msg.type === 'admin_message' && !readMessages.includes(msg.id)
+            ).length;
+            
+            const badge = document.getElementById('chatBadge');
+            if (badge) {
+                if (unreadCount > 0) {
+                    badge.textContent = unreadCount > 99 ? '99+' : String(unreadCount);
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
+            }
+        }
+        // إضافة مستمع للتحديثات الفورية على الإشعارات
+        function listenToNotificationsUpdates() {
+            const user = firebase.auth().currentUser;
+            if (!user) return;
+
+            db.collection('users')
+                .where('email', '==', user.email)
+                .limit(1)
+                .onSnapshot(snapshot => {
+                    if (!snapshot.empty) {
+                        const doc = snapshot.docs[0];
+                        const notifications = doc.data().notifications || [];
+                        updateNavBadge('notifications', notifications);
+                    }
+                });
+        }
+        
+        // تفاعل الشريط السفلي
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', function() {
+                document.querySelectorAll('.nav-item').forEach(navItem => {
+                    navItem.classList.remove('active');
+                });
+                this.classList.add('active');
+            });
+        });
+        
+        
+        
+        
+
+        // استدعاء تلقائي عند تحميل الصفحة (مرة واحدة)
+        if (!localStorage.getItem('messagesAdded')) {
+            addTestMessages().then(() => {
+                localStorage.setItem('messagesAdded', 'true');
+            });
+        }
+        
+        
+    </script>
+</body>
+</html>

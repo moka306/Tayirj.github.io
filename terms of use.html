@@ -1,0 +1,1537 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مرجان - شروط الاستخدام</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-functions-compat.js"></script>
+    <style>
+        /* ============ الإعدادات العامة والهيكل الأساسي ============ */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Tajawal', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            color: #333;
+            line-height: 1.6;
+            padding: 0;
+            min-height: 100vh;
+            padding-bottom: 140px; /* زيادة الحشوة السفلية لاستيعاب الشريط السفلي */
+            
+            /* إضافة لمنع التكبير التلقائي على الهواتف */
+            text-size-adjust: 100%;
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
+        }
+        
+        .container {
+            max-width: 1500px;
+            margin: 0 auto;
+            padding: 5px;
+            
+            /* منع التكبير التلقائي على الهواتف */
+            overflow-x: hidden;
+        }
+        
+        /* ============ الشريط العلوي الجديد مع الصورة ============ */
+        .top-bar-container {
+            width: 100%;
+            margin-bottom: 10px;
+            position: relative;
+            overflow: hidden;
+            border-radius: 0px;
+           
+        }
+        
+        .top-bar-with-image {
+            height: 200px;
+            position: relative;
+        }
+        
+        .top-bar-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: -1;
+        }
+        
+        
+        .nav-badge {
+            position: absolute;
+            top: 2px;
+            right: 20px;
+            background: linear-gradient(45deg, #ff4757, #ff3838);
+            color: white;
+            border-radius: 50%;
+            width: 15px;
+            height: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.5rem;
+            font-weight: bold;
+            box-shadow: 0 2px 6px rgba(255, 71, 87, 0.5);
+            z-index: 3;
+        }
+
+        /* إخفاء الشارة عند عدم وجود رسائل */
+        .nav-badge.hidden {
+            display: none;
+        }
+        
+        .top-bar-header {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        
+        
+       
+    
+        
+        .menu-button {
+            background: rgba(255, 255, 255, 0.9); /* ✅ خلفية واضحة */
+            color: #1a2a6c;
+            border: none;
+            padding: 12px 18px;
+            border-radius: 30px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1.1rem;
+        }
+        
+        .menu-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        /* ============ القائمة الجانبية ============ */
+        .side-menu {
+            position: fixed;
+            top: 0;
+            right: -300px;
+            width: 250px;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            z-index: 2000;
+            padding: 20px;
+            transition: right 0.3s ease;
+            overflow-y: auto;
+            box-shadow: -5px 0 15px rgba(0, 0, 0, 0.5);
+        }
+        
+        .side-menu.active {
+            right: 0;
+        }
+        
+        .menu-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .close-menu {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+        
+        .menu-items {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .menu-item {
+            color: white;
+            text-decoration: none;
+            padding: 15px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.85rem;
+        }
+        
+        .menu-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .menu-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1999;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .menu-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .top-bar-overlay {
+            display: none; /* إخفاء الطبقة الشفافة */
+        }
+
+        .top-bar-header {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            z-index: 100;
+        }
+
+        .logo-section {
+            display: none; /* إخفاء قسم الشعار */
+        }
+        
+        /* ============ قسم اللغة والكوكب ============ */
+        .language-planet-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+        
+        .planet-icon {
+            font-size: 1.3rem;
+            color: #4a6fc5;
+        }
+        
+        .language-select {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 3px 3px;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+        
+        .language-select option {
+            background: #1a2a6c;
+            color: white;
+        }
+        
+        /* ============ قسم شروط الاستخدام (مطابق لقسم اتصل بنا) ============ */
+        .terms-section {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px 20px;
+            border-radius: 10px;
+            margin: 25px 0;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .section-title {
+            text-align: center;
+            margin-bottom: 25px;
+            color: #1a2a6c;
+            font-size: 1.8rem;
+            position: relative;
+            padding-bottom: 12px;
+        }
+        
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 4px;
+            background: linear-gradient(to right, #ff8c00, #ff4500);
+            border-radius: 2px;
+        }
+        
+        .section-subtitle {
+            text-align: center;
+            margin-bottom: 40px;
+            color: #6c757d;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            line-height: 1.8;
+        }
+        
+        .last-updated {
+            text-align: center;
+            color: #6c757d;
+            margin-bottom: 40px;
+            font-style: italic;
+        }
+        
+        .terms-content {
+            line-height: 1.8;
+        }
+        
+        .terms-section h3 {
+            color: #1a2a6c;
+            margin: 25px 0 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e6e9ef;
+            font-size: 1.3rem;
+        }
+        
+        .terms-section p {
+            margin-bottom: 15px;
+            text-align: justify;
+            line-height: 1.8;
+        }
+        
+        .terms-list {
+            padding-right: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .terms-list li {
+            margin-bottom: 10px;
+            position: relative;
+            line-height: 1.8;
+        }
+        
+        .terms-list li::before {
+            content: "•";
+            color: #ff8c00;
+            font-weight: bold;
+            display: inline-block;
+            width: 1em;
+            margin-left: 10px;
+        }
+        
+        .important-note {
+            background: #fff3e0;
+            border-right: 4px solid #ff8c00;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 25px 0;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .important-note h4 {
+            color: #ff8c00;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.2rem;
+        }
+        
+        .acceptance-section {
+            background: #e8f5e9;
+            border: 1px solid #c8e6c9;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 30px 0;
+            text-align: center;
+        }
+        
+        .acceptance-section h3 {
+            color: #2e7d32;
+            text-align: center;
+            border: none;
+            font-size: 1.4rem;
+        }
+        
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        .checkbox-container input {
+            width: 18px;
+            height: 18px;
+        }
+        
+        .accept-btn {
+            background: linear-gradient(to right, #1a2a6c, #4a6fc5);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-block;
+            margin-top: 15px;
+            font-size: 1.1rem;
+        }
+        
+        .accept-btn:hover {
+            background: linear-gradient(to right, #4a6fc5, #1a2a6c);
+            transform: translateY(-2px);
+        }
+        
+        .accept-btn:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        /* ============ الشريط السفلي الزجاجي المعدل ============ */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 25px 25px 0 0;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            box-shadow: 0 -5px 25px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 1000;
+        }
+        
+        .nav-item {
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            font-size: 0.85rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 15px;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .nav-item i {
+            margin-bottom: 4px;
+            font-size: 1.2rem;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .nav-item span {
+            position: relative;
+            z-index: 2;
+        }
+        
+        .nav-item.active {
+            color: #1a2a6c;
+            background: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 4px 15px rgba(255, 255, 255, 0.6);
+            border-radius: 50px;
+            padding: 5px 20px;
+        }
+        
+        .nav-item:not(.active):hover {
+            color: white;
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .nav-item::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s ease, height 0.6s ease;
+        }
+        
+        .nav-item:active::before {
+            width: 300px;
+            height: 300px;
+        }
+        
+        .add-center {
+            background: linear-gradient(45deg, #ff8c00, #ff4500);
+            color: white;
+            padding: 12px 25px;
+            border-radius: 50px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(255, 140, 0, 0.4);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .add-center::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s ease, height 0.6s ease;
+        }
+        
+        .add-center:active::before {
+            width: 300px;
+            height: 300px;
+        }
+        
+        .add-center:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(255, 140, 0, 0.5);
+        }
+        
+        /* ============ التذييل (Footer) ============ */
+        .footer {
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 15px;
+            border-radius: 0 0 8px 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .weather {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .temp {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        
+        .date-time {
+            text-align: center;
+        }
+        
+        .page-nav {
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+        }
+        
+        .page-nav-btn {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.9rem;
+        }
+        
+        .page-nav-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        /* ============ التصميم المتجاوب للشاشات الصغيرة ============ */
+        @media (max-width: 1024px) {
+            .container {
+                max-width: 90%;
+            }
+            
+            .top-bar-with-image {
+                height: 180px;
+            }
+            
+         
+            
+           
+            .menu-button {
+                padding: 10px 15px;
+                font-size: 1rem;
+            }
+            
+            .terms-section {
+                padding: 20px;
+            }
+            
+            .section-title {
+                font-size: 1.6rem;
+            }
+            
+            /* تعديلات للشريط السفلي على الشاشات المتوسطة */
+            .bottom-nav {
+                padding: 10px 15px;
+                border-radius: 20px 20px 0 0;
+            }
+            
+            .nav-item {
+                padding: 8px 10px;
+                font-size: 0.7rem;
+            }
+            
+            .nav-item i {
+                font-size: 1.1rem;
+            }
+            
+            .add-center {
+                padding: 8px 16px;
+                font-size: 0.8rem;
+            }
+            
+            .terms-section {
+                margin: 15px 0;
+                padding: 20px 15px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .top-bar-with-image {
+                height: 140px;
+            }
+            
+            .container {
+                max-width: 100%;
+                padding: 0 1px;
+            }
+            
+           
+           
+            
+            .menu-button {
+                padding: 8px 12px;
+                font-size: 0.9rem;
+            }
+            
+            .section-title {
+                font-size: 1.4rem;
+                margin-bottom: 10px;
+            }
+            
+            .last-updated {
+                font-size: 0.9rem;
+                margin-bottom: 30px;
+            }
+            
+            .terms-section h3 {
+                font-size: 1.2rem;
+            }
+            
+            .footer {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+            
+            .page-nav {
+                justify-content: center;
+                width: 100%;
+            }
+            
+            /* تعديلات للشريط السفلي على الشاشات الصغيرة */
+            .bottom-nav {
+                padding: 1px 15px;
+                border-radius: 20px 20px 0 0;
+            }
+            
+            .nav-item {
+                padding: 8px 10px;
+                font-size: 0.7rem;
+            }
+            
+            .nav-item i {
+                font-size: 1.1rem;
+            }
+            
+            .add-center {
+                padding: 5px 16px;
+                font-size: 0.8rem;
+            }
+            
+            .terms-section {
+                margin: 5px 0;
+                padding: 15px 10px;
+                border-radius: 8px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            
+            #bottomNavCompetitions .nav-badge {
+                top: 0.7
+                px;
+                right: 10px;
+                width: 12.5px;
+                height: 12.5px;
+                font-size: 0.5rem;
+            }
+            .container {
+                padding: 0 !important;
+                margin: 0;
+                max-width: 100%;
+            }
+
+            .nav-badge {
+                top: 6px;
+                right: 12px;
+                width: 13px;
+                height: 13px;
+                font-size: 0.5rem;
+                top: 1px;
+                right: 20px;
+            }
+            /* نافذة تسجيل الدخول */
+            .login-modal {
+                max-width: 300px;
+                padding: 15px;
+                width: 85%;
+            }
+            #notificationsBadge {
+                top: 0.7
+                px;
+                right: 10px;
+                width: 12.5px;
+                height: 12.5px;
+                font-size: 0.5rem;
+            }
+            .ad-content {
+                padding: 5px;
+                gap: 1px;
+            }
+            .ad-title {
+                font-size: 0.8rem;
+                margin-bottom: 2px;
+                line-height: 1.2;
+                max-height: 2.4em;
+            }
+            
+            .login-title {
+                font-size: 1.1rem;
+                margin-bottom: 6px;
+            }
+            
+            .login-subtitle {
+                font-size: 0.75rem;
+            }
+            
+            .login-input {
+                padding: 8px 10px;
+                font-size: 0.8rem;
+            }
+            
+            .login-btn {
+                padding: 8px;
+                font-size: 0.8rem;
+                margin-top: 6px;
+            }
+            
+            .login-links {
+                font-size: 0.7rem;
+                margin-top: 10px;
+                flex-direction: column;
+                gap: 8px;
+                align-items: center;
+            }
+            
+            .close-login {
+                top: 10px;
+                left: 10px;
+                font-size: 1rem;
+            }
+         
+            .news-scroll {
+                font-size: 0.8rem;
+            }
+
+            .top-bar-with-image {
+                width: 100%;
+                height: 170px;
+                overflow: hidden;
+                margin-bottom: 0; /* ✅ مهم جداً */
+                position: relative; /* ✅ إضافة */
+                z-index: 50; 
+                
+            }
+            
+            .logo {
+                font-size: 1.4rem;
+            }
+            
+            .menu-button {
+                padding: 6px 12px;
+                font-size: 0.8rem;
+                gap: 5px;
+                border-radius: 20px;
+                box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+            }
+            
+            .categories {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 8px;
+            }
+            
+            .category {
+                padding: 8px 4px;
+            }
+            
+            .category i {
+                font-size: 1rem;
+                width: 28px;
+                height: 28px;
+                line-height: 28px;
+            }
+            
+            .category div {
+                font-size: 0.75rem;
+            }
+            
+            .section-title {
+                font-size: 0.95rem;
+            }
+            
+            .carousel-container {
+                height: 240px;
+            }
+            
+            .ad-card {
+                width: 170px;
+                height: 210px;
+            }
+            
+            .ad-image {
+                height: 140px;
+            }
+            
+            .ad-title {
+                font-size: 0.75rem;
+            }
+            
+            .ad-price {
+                font-size: 0.85rem;
+                margin-bottom: 1px;
+            }
+            .ad-location {
+                font-size: 0.75rem;
+                margin-top: 1px;
+                gap: 3px;
+            }
+            .top-bar-image {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                object-position: center;
+                z-index: 50;
+            }
+            
+            .categories-section {
+                position: relative;
+                z-index: 10;
+                margin-top: 0; /* ✅ مهم جداً */
+                border-radius: 0px;
+                box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.15);
+            }
+            .top-bar-container {
+                margin-bottom: -100px;
+                padding: 0;
+                position: relative; /* ✅ إضافة */
+                z-index: 50; /* ✅ فوق البطاقة */
+            }
+            .carousel-btn {
+                padding: 6px 12px;
+                font-size: 0.65rem;
+            }
+            
+            .suggested-image {
+                height: 160px;
+            }
+            
+            .suggested-title {
+                font-size: 0.85rem;
+            }
+            
+            .suggested-price {
+                font-size: 0.9rem;
+            }
+            
+            .stats-section {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 5px;
+            }
+            
+            .stat-item {
+                padding: 5px;
+            }
+            
+            .stat-icon {
+                font-size: 0.95rem;
+                margin-bottom: 3px;
+            }
+            
+            
+            .stat-number {
+                font-size: 0.85rem;
+                margin-bottom: 3px;
+            }
+            
+            .stat-label {
+                font-size: 0.55rem;
+            }
+            
+            .bottom-nav {
+                padding: 3px 0px;
+            }
+            .suggested-ads {
+                padding: 20px 70px;
+                margin: 15px 0;
+            }
+            
+            .suggested-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+            .suggested-ad {
+                border-radius: 12px;
+            }
+            
+            .suggested-image {
+                height: 180px;
+            }
+            
+            .suggested-details {
+                padding: 10px;
+            }
+            
+            .suggested-title {
+                font-size: 0.85rem;
+                line-height: 1.3;
+                max-height: 2.6em;
+            }
+            
+            .suggested-price {
+                font-size: 0.9rem;
+            }
+            
+            .suggested-location {
+                font-size: 0.75rem;
+            }
+                    
+            .nav-item {
+                padding: 5px 8px;
+                font-size: 0.6rem;
+            }
+            .top-bar-header {
+                display: flex;
+                justify-content: flex-end;
+                align-items: center;
+                margin-bottom: 0; /* ✅ تغيير من 20px */
+                position: absolute;
+                top: 15px;
+                left: 15px;
+                z-index: 100;
+            
+            }
+            
+            .nav-item i {
+                font-size: 1rem;
+            }
+            
+            .add-center {
+                padding: 6px 12px;
+                font-size: 0.7rem;
+            }
+        
+            .nav-badge {
+                
+                top: 6px;
+                right: 12px;
+                width: 13px;
+                height: 13px;
+                font-size: 0.5rem;
+                top: 1px;
+                right: 20px;
+            }
+            #bottomNavCompetitions .nav-badge {
+                top: 0.7
+                px;
+                right: 10px;
+                width: 12.5px;
+                height: 12.5px;
+                font-size: 0.5rem;
+            }
+            
+            #notificationsBadge {
+                top: 0.7
+                px;
+                right: 10px;
+                width: 12.5px;
+                height: 12.5px;
+                font-size: 0.5rem;
+            }
+            body {
+                padding-bottom: 60px;
+            }
+            
+            .terms-section {
+                margin-bottom: 5px;
+            }
+            
+            .footer {
+                margin-bottom: 5px;
+                padding: 6px 10px;
+            }
+            
+           
+            
+       
+            
+            .menu-button {
+                padding: 8px 12px;
+                font-size: 0.8rem;
+            }
+            
+            .section-title {
+                font-size: 1.15rem;
+                padding-bottom: 5px;
+            }
+            
+            .terms-section h3 {
+                font-size: 1.1rem;
+            }
+            
+            .terms-section p {
+                font-size: 0.9rem;
+            }
+            
+            .accept-btn {
+                padding: 10px 20px;
+                font-size: 1rem;
+            }
+            
+            .bottom-nav {
+                padding: 3px 0px;
+            }
+            
+            .nav-item {
+                padding: 5px 8px;
+                font-size: 0.6rem;
+            }
+            
+            .nav-item i {
+                font-size: 1rem;
+            }
+            
+            .add-center {
+                padding: 6px 12px;
+                font-size: 0.7rem;
+            }
+            
+            .page-nav {
+                flex-direction: column;
+                align-items: center;
+                gap: 10px;
+            }
+            
+            .page-nav-btn {
+                padding: 6px 12px;
+                font-size: 0.8rem;
+            }
+        }
+
+        @media (max-width: 350px) {
+            .top-bar-with-image {
+                height: 100px;
+            }
+            
+            
+            
+            .menu-button {
+                padding: 5px 8px;
+                font-size: 0.7rem;
+            }
+            
+            .section-title {
+                font-size: 1rem;
+            }
+            
+            .bottom-nav {
+                padding: 5px 8px;
+            }
+            
+            .nav-item {
+                padding: 4px 6px;
+                font-size: 0.5rem;
+            }
+            
+            .nav-item i {
+                font-size: 0.9rem;
+            }
+            
+            .add-center {
+                padding: 5px 10px;
+                font-size: 0.6rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- ============ الحاوية الرئيسية ============ -->
+    <div class="container">
+        <!-- ============ الشريط العلوي الجديد مع الصورة ============ -->
+        <div class="top-bar-container">
+            <div class="top-bar-with-image">
+                <img src="images/photo4.png" alt="Cover" class="top-bar-image">
+                <div class="top-bar-header">
+                    <button class="menu-button" id="menuButton">
+                        <i class="fas fa-bars"></i> القائمة
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ============ القائمة الجانبية ============ -->
+        <div class="side-menu" id="sideMenu">
+            <div class="menu-header">
+                <h3>القائمة الرئيسية</h3>
+                <button class="close-menu" id="closeMenu"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <!-- ============ قسم اللغة والكوكب ============ -->
+            <div class="language-planet-row">
+                <div class="planet-icon">
+                    <i class="fas fa-globe"></i>
+                </div>
+                <select class="language-select">
+                    <option value="ar">العربية</option>
+                    <option value="en">English</option>
+                </select>
+            </div>
+            
+            <div class="menu-items">
+                <a href="#" class="menu-item" id="myAdsMenuLink">
+                    <i class="fas fa-bullhorn"></i> إعلاناتي
+                </a>
+                <a href="#" class="menu-item" id="favoritesMenuLink">
+                    <i class="fas fa-heart"></i> المفضلة
+                </a>
+                <a href="#" class="menu-item" id="contactMenuLink">
+                    <i class="fas fa-phone"></i> اتصل بنا
+                </a>
+                <a href="#" class="menu-item active">
+                    <i class="fas fa-file-contract"></i> شروط الاستخدام
+                </a>
+                <a href="#" class="menu-item" id="aboutMenuLink">
+                    <i class="fas fa-info-circle"></i> من نحن
+                </a>
+                <a href="#" class="menu-item" id="privacyMenuLink">
+                    <i class="fas fa-shield-alt"></i> سياسة الخصوصية
+                </a>
+                <a href="#" class="menu-item">
+                    <i class="fas fa-sign-out-alt"></i> تسجيل خروج
+                </a>
+            </div>
+        </div>
+        <div class="menu-overlay" id="menuOverlay"></div>
+        
+        <!-- ============ قسم شروط الاستخدام ============ -->
+        <div class="terms-section">
+            <h2 class="section-title">شروط الاستخدام</h2>
+            
+            <p class="last-updated">آخر تحديث: 16 سبتمبر 2025</p>
+            
+            <div class="terms-content">
+                <h3>1. المقدمة</h3>
+                <p>مرحبًا بكم في منصة Tayirj للإعلانات المبوبة. تهدف هذه الشروط والأحكام إلى تنظيم استخدامكم لمنصتنا وخدماتنا. بمجرد استخدامكم للمنصة، فإنكم توافقون على الالتزام بهذه الشروط والأحكام بشكل كامل.</p>
+                
+                <h3>2. تعريفات</h3>
+                <p>في هذه الوثيقة، تشير المصطلحات التالية إلى المعاني المحددة أمامها ما لم يقتض السياق غير ذلك:</p>
+                <ul class="terms-list">
+                    <li>"المنصة": تشير إلى موقع Tayirj الإلكتروني وتطبيقاته الذكية.</li>
+                    <li>"المستخدم": أي شخص يزور المنصة أو ينشئ حسابًا عليها أو ينشر إعلانات.</li>
+                    <li>"المعلن": المستخدم الذي ينشر إعلانات على المنصة.</li>
+                    <li>"المتصفح": المستخدم الذي يتصفح الإعلانات المنشورة على المنصة.</li>
+                </ul>
+                
+                <h3>3. إنشاء الحساب</h3>
+                <p>لنشر الإعلانات على المنصة، يجب إنشاء حساب شخصي. عند إنشاء الحساب، فإنك توافق على:</p>
+                <ul class="terms-list">
+                    <li>تقديم معلومات دقيقة وكاملة ومحدثة عن نفسك.</li>
+                    <li>الحفاظ على سرية معلومات حسابك وكلمة المرور.</li>
+                    <li>تحمل المسؤولية الكاملة عن جميع الأنشطة التي تتم تحت حسابك.</li>
+                    <li>إبلاغنا فورًا عن أي استخدام غير مصرح لحسابك أو أي خرق للأمان.</li>
+                </ul>
+                
+                <h3>4. نشر الإعلانات</h3>
+                <p>عند نشر إعلان على المنصة، فإنك توافق على:</p>
+                <ul class="terms-list">
+                    <li>نشر إعلانات حقيقية ودقيقة وليست مضللة.</li>
+                    <li>عدم نشر إعلانات لمنتجات أو خدمات محظورة أو غير قانونية.</li>
+                    <li>عدم انتهاك حقوق الملكية الفكرية للآخرين.</li>
+                    <li>التصنيف الدقيق للإعلانات ضمن الفئات المناسبة.</li>
+                    <li>عدم نشر نفس الإعلان بشكل متكرر (SPAM).</li>
+                </ul>
+                
+                <div class="important-note">
+                    <h4><i class="fas fa-exclamation-circle"></i> ملاحظة مهمة</h4>
+                    <p>تحتفظ إدارة المنصة بالحق في رفض أو إزالة أي إعلان دون إشعار مسبق إذا تم انتهاك شروط الاستخدام هذه. كما تحتفظ الإدارة بالحق في تعليق أو إنهاء حساب أي مستخدم ينتهك هذه الشروط.</p>
+                </div>
+                
+                <h3>5. المحتوى المحظور</h3>
+                <p>يُحظر نشر المحتوى الذي:</p>
+                <ul class="terms-list">
+                    <li>يحتوي على مواد إباحية أو غير أخلاقية.</li>
+                    <li>يمثل خطاب كراهية أو تمييزًا ضد أي مجموعة.</li>
+                    <li>يشجع على الأنشطة غير القانونية.</li>
+                    <li>ينتهك حقوق الملكية الفكرية للآخرين.</li>
+                    <li>يحتوي على معلومات مضللة أو احتيالية.</li>
+                    <li>يضر بسمعة الآخرين أو يتضمن تشهيرًا.</li>
+                </ul>
+                
+                <h3>6. المسؤوليات والحدود</h3>
+                <p>تعمل منصة Tayirj  وسيط بين المعلنين والمتصفحين فقط، وليست مسؤولة عن:</p>
+                <ul class="terms-list">
+                    <li>جودة أو سلامة أو شرعية السلع أو الخدمات المعلن عنها.</li>
+                    <li>دقة أو صحة المعلومات الواردة في الإعلانات.</li>
+                    <li>القدرة على الدفع أو النزاهة من قبل أي من المستخدمين.</li>
+                    <li>أي تعاملات تتم خارج نطاق المنصة.</li>
+                </ul>
+                
+                <h3>7. الملكية الفكرية</h3>
+                <p>جميع حقوق الملكية الفكرية للمنصة ومحتواها (باستثناء محتوى المستخدمين) مملوكة لنا. لا يجوز نسخ أو تعديل أو توزيع أي جزء من المنصة دون إذن كتابي مسبق منا.</p>
+                
+                <h3>8. التعديلات على الشروط</h3>
+                <p>تحتفظ إدارة المنصة بالحق في تعديل هذه الشروط في أي وقت. سيتم إشعار المستخدمين بأي تغييرات جوهرية عبر البريد الإلكتروني أو عبر إشعار على المنصة. يستمر استخدامك للمنصة بعد التعديلات يعني موافقتك على الشروط المعدلة.</p>
+                
+                <h3>9. إنهاء الخدمة</h3>
+                <p>يحق للإدارة تعليق أو إنهاء حساب أي مستخدم ينتهك هذه الشروط دون إشعار مسبق. كما يحق للمستخدم إنهاء حسابه في أي وقت.</p>
+                
+                <h3>10. القانون الواجب التطبيق</h3>
+                <p>تخضع هذه الشروط والأحكام وتفسر وفقًا لقوانين الدولة المقيم بها. أي نزاعات تنشأ عن هذه الشروط ستخضع للاختصاص الحصري للمحاكم في دولتك.</p>
+                
+                <div class="acceptance-section">
+                    <h3>قبول الشروط والأحكام</h3>
+                    <p>باستخدامك منصة Tayirj، فإنك تقر بأنك قد قرأت هذه الشروط والأحكام وفهمتها ووافقت على الالتزام بها.</p>
+                    
+                    <div class="checkbox-container">
+                        <input type="checkbox" id="acceptTerms">
+                        <label for="acceptTerms">أقر بأني قد قرأت وفهمت وأوافق على شروط الاستخدام هذه</label>
+                    </div>
+                    
+                    <button class="accept-btn" id="acceptButton" disabled>قبول الشروط</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ============ التذييل (Footer) ============ -->
+        <div class="footer">
+            <div class="weather">
+                <i class="fas fa-sun"></i>
+                <div class="temp">37°C</div>
+                <div>صافي</div>
+            </div>
+            
+            <div class="date-time">
+                <div>16/9/2025</div>
+                <div>11:42 PM</div>
+            </div>
+            
+            <div class="page-nav">
+                <button class="page-nav-btn" onclick="scrollToTop()">
+                    <i class="fas fa-arrow-up"></i> الانتقال للأعلى
+                </button>
+                <button class="page-nav-btn" onclick="window.print()">
+                    <i class="fas fa-print"></i> طباعة الشروط
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ============ الشريط السفلي الزجاجي المعدل ============ -->
+    <nav class="bottom-nav">
+        <a href="index.html" class="nav-item" id="bottomNavHome">
+            <i class="fas fa-home"></i>
+            <span>الرئيسية</span>
+        </a>
+        <a href="chat.html" class="nav-item" id="bottomNavCompetitions">
+            <i class="fas fa-gift"></i>
+            <span>المسابقات</span>
+            <div class="nav-badge hidden" id="chatBadge">0</div>
+        </a>
+        <a href="Add.html" class="nav-item add-center" id="bottomNavAdd">
+            <i class="fas fa-plus-circle"></i>
+            <span>أضف إعلانك</span>
+        </a>
+        <a href="Notifications.html" class="nav-item" id="bottomNavNotifications">
+            <i class="fas fa-bell"></i>
+            <span>الإشعارات</span>
+            <div class="nav-badge hidden" id="notificationsBadge">0</div>
+        </a>
+        <a href="Account.html" class="nav-item" id="bottomNavAccount">
+            <i class="fas fa-user"></i>
+            <span>حسابي</span>
+        </a>
+    </nav>
+
+    <script>
+        // في بداية script في chat.html
+        const firebaseConfig = {
+            apiKey: "AIzaSyDZFR9qYKG3vbrrwhNIpy7N3Rfl4J5bxzA",
+            authDomain: "marjan-88c6e.firebaseapp.com",
+            projectId: "marjan-88c6e",
+            storageBucket: "marjan-88c6e.firebasestorage.app",
+            messagingSenderId: "92987465899",
+            appId: "1:92987465899:web:f91398c67f4812b67e57ee"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        let globalChatMessages = [];
+        
+        // ============ إدارة القائمة الجانبية ============
+        const menuButton = document.getElementById('menuButton');
+        const sideMenu = document.getElementById('sideMenu');
+        const closeMenu = document.getElementById('closeMenu');
+        const menuOverlay = document.getElementById('menuOverlay');
+        
+        menuButton.addEventListener('click', function() {
+            sideMenu.classList.add('active');
+            menuOverlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        });
+        
+        function closeSideMenu() {
+            sideMenu.classList.remove('active');
+            menuOverlay.classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+        
+        closeMenu.addEventListener('click', closeSideMenu);
+        menuOverlay.addEventListener('click', closeSideMenu);
+        
+        // ============ قبول الشروط ============
+        const acceptCheckbox = document.getElementById('acceptTerms');
+        const acceptButton = document.getElementById('acceptButton');
+        
+        acceptCheckbox.addEventListener('change', function() {
+            acceptButton.disabled = !this.checked;
+        });
+        
+        acceptButton.addEventListener('click', function() {
+            alert('شكرًا لك على قبول شروط الاستخدام. يمكنك الآن استخدام منصة مرجان بشكل كامل.');
+            // هنا يمكن إضافة redirect إلى الصفحة الرئيسية أو أي إجراء آخر
+        });
+        
+        // ============ الانتقال إلى الأعلى ============
+        function scrollToTop() {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        }
+        
+        // ============ تفاعل الشريط السفلي ============
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', function() {
+                document.querySelectorAll('.nav-item').forEach(navItem => {
+                    navItem.classList.remove('active');
+                });
+                this.classList.add('active');
+            });
+        });
+        
+        // ============ دالة تحديث التاريخ والوقت ============
+        function updateDateTime() {
+            const now = new Date();
+            const dateElement = document.querySelector('.date-time div:first-child');
+            const timeElement = document.querySelector('.date-time div:last-child');
+            
+            const options = { year: 'numeric', month: 'numeric', day: 'numeric' };
+            dateElement.textContent = now.toLocaleDateString('ar-EG', options);
+            
+            const timeOptions = { hour: '2-digit', minute: '2-digit', hour12: true };
+            timeElement.textContent = now.toLocaleTimeString('ar-EG', timeOptions);
+        }
+        function updateNavBadge(type, notifications) {
+            const id = type === 'notifications' ? 'notificationsBadge' : null;
+            if (!id) return;
+
+            const badge = document.getElementById(id);
+            if (!badge) return;
+
+            // حساب الإشعارات غير المقروءة فقط
+            const unreadCount = notifications.filter(notification => !notification.read).length;
+
+            if (unreadCount > 0) {
+                badge.textContent = unreadCount > 99 ? '99+' : String(unreadCount);
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+        function loadUserNotifications() {
+            const user = firebase.auth().currentUser;
+            
+            if (!user) {
+                return;
+            }
+
+            db.collection('users')
+                .where('email', '==', user.email)
+                .limit(1)
+                .get()
+                .then(snapshot => {
+                    if (snapshot.empty) {
+                        return;
+                    }
+
+                    const doc = snapshot.docs[0];
+                    const userData = doc.data();
+                    const notifications = userData.notifications || [];
+
+                    updateNavBadge('notifications', notifications);
+                })
+                .catch(error => {
+                    console.error('خطأ في تحميل الإشعارات:', error);
+                });
+        }
+        function listenToNotificationsUpdates() {
+            const user = firebase.auth().currentUser;
+            if (!user) return;
+
+            db.collection('users')
+                .where('email', '==', user.email)
+                .limit(1)
+                .onSnapshot(snapshot => {
+                    if (!snapshot.empty) {
+                        const doc = snapshot.docs[0];
+                        const notifications = doc.data().notifications || [];
+                        updateNavBadge('notifications', notifications);
+                    }
+                });
+        }
+        function listenToGlobalChat() {
+            db.collection('global_chat')
+                .orderBy('timestamp', 'desc')
+                .onSnapshot(snapshot => {
+                    globalMessages = [];
+                    snapshot.forEach(doc => {
+                        globalMessages.push({
+                            id: doc.id,
+                            ...doc.data()
+                        });
+                    });
+                    updateChatBadge();
+                });
+        }
+        function updateChatBadge() {
+            const readMessages = JSON.parse(localStorage.getItem('readMessages')) || [];
+            const unreadCount = globalMessages.filter(msg => 
+                msg.type === 'admin_message' && !readMessages.includes(msg.id)
+            ).length;
+            
+            const badge = document.getElementById('chatBadge');
+            if (badge) {
+                if (unreadCount > 0) {
+                    badge.textContent = unreadCount > 99 ? '99+' : String(unreadCount);
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
+            }
+        }
+        firebase.auth().onAuthStateChanged((user) => {
+            if (user) {
+                loadUserNotifications();
+                listenToNotificationsUpdates();
+                listenToGlobalChat();
+            }
+        });
+        
+        // تحديث الوقت فوراً ثم كل دقيقة
+        updateDateTime();
+        setInterval(updateDateTime, 60000);
+        
+        // ============ ربط عناصر القائمة بالصفحات ============
+        document.getElementById('myAdsMenuLink').addEventListener('click', function(e) {
+            e.preventDefault();
+            window.location.href = 'ads.html';
+        });
+        document.getElementById('favoritesMenuLink').addEventListener('click', function(e) {
+            e.preventDefault();
+            window.location.href = 'Favorites.html';
+        });
+
+        document.getElementById('contactMenuLink').addEventListener('click', function(e) {
+            e.preventDefault();
+            window.location.href = 'callus.html';
+        });
+
+        document.getElementById('aboutMenuLink').addEventListener('click', function(e) {
+            e.preventDefault();
+            window.location.href = 'Who%20we%20are.html';
+        });
+
+        document.getElementById('privacyMenuLink').addEventListener('click', function(e) {
+            e.preventDefault();
+            window.location.href = 'privacy%20policy.html';
+        });
+        document.getElementById('bottomNavHome').addEventListener('click', function(e) {
+            e.preventDefault();
+            window.location.href = 'index.html';
+        });
+        document.getElementById('bottomNavChat').addEventListener('click', function(e) {
+            e.preventDefault();
+            window.location.href = 'chat.html';
+        });
+        document.getElementById('bottomNavAdd').addEventListener('click', function(e) {
+            e.preventDefault();
+            window.location.href = 'Add.html';
+        });
+        document.getElementById('bottomNavNotifications').addEventListener('click', function(e) {
+            e.preventDefault();
+            window.location.href = 'Notifications.html';
+        });
+        document.getElementById('bottomNavAccount').addEventListener('click', function(e) {
+            e.preventDefault();
+            window.location.href = 'Account.html';
+        });
+    </script>
+</body>
+</html>
