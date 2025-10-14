@@ -2930,7 +2930,7 @@
                             currentBalance: firebase.firestore.FieldValue.increment(-10),
                             hasPublishedAd: true  // ✅ هذا هو المكان الصحيح
                         });
-                        console.log("✅ تم خصم 10 نقاط من رصيد المستخدم");
+                        console.log("تم خصم 10 نقاط من رصيد المستخدم");
                         console.log("✅ تم تحديث hasPublishedAd إلى true");
                     } catch (error) {
                         console.error("❌ خطأ في خصم النقاط:", error);
