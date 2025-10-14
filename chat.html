@@ -3,13 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tayirj</title>
+    <title>مرجان - المراسلة</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-    <!-- ✅ Open Graph Meta Tags المحسّنة -->
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Tayirj">
     <meta property="og:title" content="🎁 مسابقة Tayirj - أعلن و استلم ارباح مالية يوميا">
@@ -23,8 +22,7 @@
     <meta property="og:image:alt" content="🎁 مسابقة Tayirj - أعلن و استلم ارباح مالية يوميا">
     <meta property="og:url" content="https://moka306.github.io/Tayirj.github.io/index.html">
     <meta property="og:locale" content="ar_AR">
-
-    <!-- ✅ Twitter Card -->
+    !-- ✅ Twitter Card --
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="🎁 مسابقة Tayirj - أعلن و استلم ارباح مالية يوميا">
     <meta name="twitter:description" content="تصفح موقعنا الان لتجد ما يلزمك مع اكبر موقع للأعلانات المبوبة في الشرق الأوسط الأن يضم جميع الدول العربية! انضم الآن 🚀">
@@ -1133,7 +1131,12 @@
         }
 
         .nav-badge.hidden {
-            display: none;
+            display: none !important;
+        }
+
+        .nav-badge.hidden {
+            display: none !important;
+            visibility: hidden !important;
         }
         
         /* علامة الرسائل غير المقروءة */
@@ -1684,41 +1687,88 @@
                 badge.classList.add('hidden');
             }
         }
-        
-        // ============ مراقبة رسائل المحادثة العامة ============
-        function listenToGlobalChat() {
-            db.collection('global_chat')
-                .orderBy('timestamp', 'desc')
-                .onSnapshot(snapshot => {
-                    globalChatMessages = [];
-                    snapshot.forEach(doc => {
-                        globalChatMessages.push({
-                            id: doc.id,
-                            ...doc.data()
-                        });
-                    });
-                    updateChatBadge();
-                }, error => {
-                    console.error('خطأ في مراقبة المحادثة العامة:', error);
-                });
-        }
-        // ============ تحديث شارة رسائل المحادثة العامة ============
-        function updateChatBadge() {
-            const readMessages = JSON.parse(localStorage.getItem('readMessages')) || [];
-            const unreadCount = globalChatMessages.filter(msg => 
-                msg.type === 'admin_message' && !readMessages.includes(msg.id)
-            ).length;
-            
+        // ✅ استبدل الدالة القديمة بهذه
+        async function updateChatBadge() {
+            const user = firebase.auth().currentUser;
             const badge = document.getElementById('chatBadge');
-            if (badge) {
+            
+            if (!badge) {
+                console.log('❌ عنصر الشارة غير موجود');
+                return;
+            }
+            
+            if (!user) {
+                badge.classList.add('hidden');
+                return;
+            }
+
+            try {
+                const readMessages = JSON.parse(localStorage.getItem('readMessages')) || [];
+                
+                // جلب المسابقات الدائمة
+                const competitionsSnapshot = await db.collection('permanent_competitions').get();
+                
+                let unreadCount = 0;
+                
+                competitionsSnapshot.forEach(doc => {
+                    if (!readMessages.includes(doc.id)) {
+                        unreadCount++;
+                    }
+                });
+                
+                // جلب الرسائل الخاصة
+                const userSnapshot = await db.collection('users')
+                    .where('email', '==', user.email)
+                    .limit(1)
+                    .get();
+                
+                if (!userSnapshot.empty) {
+                    const userData = userSnapshot.docs[0].data();
+                    const chatMessages = userData.chatMessages || [];
+                    
+                    chatMessages.forEach(msg => {
+                        if (msg.type === 'admin_message' && !readMessages.includes(msg.id)) {
+                            unreadCount++;
+                        }
+                    });
+                }
+                
+                // ✅ تحديث الشارة بطريقة قوية
+                console.log('📊 عدد الرسائل غير المقروءة:', unreadCount);
+                
                 if (unreadCount > 0) {
                     badge.textContent = unreadCount > 99 ? '99+' : String(unreadCount);
-                    badge.classList.remove('hidden');
+                    badge.className = 'nav-badge'; // إزالة hidden
+                    // لا نستخدم style مباشرة، نعتمد على CSS فقط
                 } else {
-                    badge.classList.add('hidden');
+                    badge.className = 'nav-badge hidden'; // إضافة hidden
                 }
+                
+            } catch (error) {
+                console.error('❌ خطأ في تحديث شارة المسابقات:', error);
             }
         }
+        // ✅ أضف هذه الدالة الجديدة
+        function listenToChatUpdates() {
+            const user = firebase.auth().currentUser;
+            if (!user) return;
+            
+            // 1️⃣ الاستماع للمسابقات الدائمة
+            db.collection('permanent_competitions')
+                .onSnapshot(() => {
+                    updateChatBadge();
+                });
+            
+            // 2️⃣ الاستماع لرسائل المستخدم الخاصة
+            db.collection('users')
+                .where('email', '==', user.email)
+                .limit(1)
+                .onSnapshot(() => {
+                    updateChatBadge();
+                });
+        }
+       
+        
         // دالة لإضافة رسالة إلى نافذة الدردشة
         function addMessageToChat(message) {
             const messageDiv = document.createElement('div');
@@ -1787,7 +1837,7 @@
                                 </div>
                                 <div class="holo-sender-info">
                                     <div class="holo-sender-name">${message.adminName || 'مرجان - الإدارة'}</div>
-                                    <div class="holo-completion-status">نسبة الاكتمال: ${completionPercentage}%</div>
+                                    <div class="holo-completion-status">نسبة الاكتمال:: ${completionPercentage}% (${successCount}/${requiredReferrals})
                                 </div>
                             </div>
                             
@@ -1885,7 +1935,7 @@
                             </div>
                             <div class="holo-sender-info">
                                 <div class="holo-sender-name">${message.adminName || 'مرجان - الإدارة'}</div>
-                                <div class="holo-completion-status">نسبة الاكتمال: ${completionPercentage}%</div>
+                                <div class="holo-completion-status">نسبة الاكتمال: ${completionPercentage}% (${successCount}/${requiredReferrals})
                             </div>
                         </div>
                         
@@ -1958,6 +2008,7 @@
         const messageInput = document.getElementById('messageInput');
         const sendMessageBtn = document.getElementById('sendMessage');
         const conversationsList = document.getElementById('conversationsList');
+        const chatMessagesContainer = document.getElementById('conversationsList'); 
         //const conversationSearch = document.getElementById('conversationSearch');
         
         // بيانات المحادثات
@@ -2008,6 +2059,7 @@
                     loadUserNotifications(); // ✅ لتحميل الإشعارات مرة واحدة
                     listenToNotificationsUpdates(); // ✅ للاستماع للتحديثات الفورية
                     loadGlobalChat();
+                    loadPermanentCompetitionsForNewUser(user.email);
                 }
             });
         });
@@ -2052,102 +2104,110 @@
         }
         
         // تحميل المحادثات العامة من Firebase
-        function loadGlobalChat() {
-            // ✅ إظهار أيقونة التحميل
-            conversationsList.innerHTML = `
-                <div class="loading-spinner">
-                    <div class="spinner"></div>
-                    <div class="loading-text">جاري تحميل المسابقات...</div>
-                    <div class="loading-subtext">يرجى الانتظار قليلاً</div>
-                </div>
-            `;
-            
-            db.collection('global_chat')
-            .orderBy('timestamp', 'desc')
-            .onSnapshot(async snapshot => {
-                conversationsList.innerHTML = ''; // ✅ إزالة أيقونة التحميل
-                globalMessages = [];
-                unreadMessages = [];
+        async function loadGlobalChat() {
+            const user = firebase.auth().currentUser;
+            if (!user) {
+                console.log('❌ لا يوجد مستخدم مسجل دخول');
+                conversationsList.innerHTML = '<p style="text-align: center; padding: 20px;">يرجى تسجيل الدخول لعرض المسابقات</p>';
+                return;
+            }
+
+            try {
+                // ✅ إظهار أيقونة التحميل
+                conversationsList.innerHTML = `
+                    <div class="loading-spinner">
+                        <div class="spinner"></div>
+                        <div class="loading-text">جاري تحميل المسابقات...</div>
+                        <div class="loading-subtext">يرجى الانتظار قليلاً</div>
+                    </div>
+                `;
                 
-                if (snapshot.empty) {
+                console.log('📥 جاري تحميل المسابقات والرسائل...');
+                
+                // 1️⃣ تحميل المسابقات العامة من permanent_competitions
+                const competitionsSnapshot = await db.collection('permanent_competitions')
+                    .orderBy('timestamp', 'desc')
+                    .get();
+                
+                const permanentMessages = [];
+                competitionsSnapshot.forEach(doc => {
+                    permanentMessages.push({
+                        id: doc.id,
+                        ...doc.data(),
+                        source: 'permanent'
+                    });
+                });
+                
+                console.log(`✅ تم تحميل ${permanentMessages.length} مسابقة عامة`);
+                
+                // 2️⃣ تحميل الرسائل الخاصة بالمستخدم
+                const userSnapshot = await db.collection('users')
+                    .where('email', '==', user.email)
+                    .limit(1)
+                    .get();
+                
+                let userMessages = [];
+                let userData = null;
+                
+                if (!userSnapshot.empty) {
+                    userData = userSnapshot.docs[0].data();
+                    userMessages = userData.chatMessages || [];
+                    
+                    userMessages = userMessages.map(msg => ({
+                        ...msg,
+                        source: 'private'
+                    }));
+                    
+                    console.log(`✅ تم تحميل ${userMessages.length} رسالة خاصة`);
+                }
+                
+                // 3️⃣ دمج الرسائل معاً
+                const allMessages = [...permanentMessages, ...userMessages];
+                
+                // 4️⃣ ترتيب حسب التاريخ (الأحدث أولاً)
+                allMessages.sort((a, b) => {
+                    const timeA = a.timestamp?.toDate ? a.timestamp.toDate() : new Date(a.timestamp);
+                    const timeB = b.timestamp?.toDate ? b.timestamp.toDate() : new Date(b.timestamp);
+                    return timeB - timeA;
+                });
+                
+                console.log(`✅ إجمالي الرسائل: ${allMessages.length}`);
+                
+                // 5️⃣ التحقق من وجود رسائل
+                if (allMessages.length === 0) {
                     conversationsList.innerHTML = `
-                        <div style="text-align: center; padding: 20px; color: #666;">
-                            <i class="fas fa-comments" style="font-size: 3rem; margin-bottom: 15px; color: #ccc;"></i>
-                            <p>لا توجد رسائل عامة بعد</p>
-                            <p style="font-size: 0.9rem; color: #888;">سيظهر هنا الرسائل العامة من الإدارة</p>
+                        <div style="text-align: center; padding: 40px; color: #999;">
+                            <i class="fas fa-inbox" style="font-size: 3rem; margin-bottom: 15px; display: block;"></i>
+                            <p>لا توجد مسابقات حالياً</p>
                         </div>
                     `;
-                    updateChatBadge();
                     return;
                 }
                 
-                const currentUser = firebase.auth().currentUser;
-                
-                // ✅ جلب بيانات المستخدم مرة واحدة فقط في البداية
-                let userData = null;
-                if (currentUser) {
-                    try {
-                        const userDoc = await db.collection('users').doc(currentUser.uid).get();
-                        if (userDoc.exists) {
-                            userData = userDoc.data();
-                            console.log('✅ بيانات المستخدم في loadGlobalChat:', userData);
-                        }
-                    } catch (error) {
-                        console.error('خطأ في جلب بيانات المستخدم:', error);
-                    }
-                }
-                
-                // ✅ استخدام Fragment لتحسين الأداء
+                // 6️⃣ عرض الرسائل بالتصميم الأصلي
+                conversationsList.innerHTML = '';
+                const readMessages = JSON.parse(localStorage.getItem('readMessages')) || [];
                 const fragment = document.createDocumentFragment();
                 
-                snapshot.forEach(doc => {
-                    const docData = doc.data();
-                    const message = {
-                        ...docData,
-                        id: doc.id
-                    };
-                    cachedCompetitions[message.id] = message;
-                    
-                    const readMessages = JSON.parse(localStorage.getItem('readMessages')) || [];
-                    if (!readMessages.includes(message.id) && message.type === 'admin_message') {
-                        unreadMessages.push(message.id);
-                    }
-                    
-                    const conversationItem = document.createElement('div');
-                    conversationItem.className = 'conversation-item';
-                    conversationItem.setAttribute('data-id', doc.id);
-                    
-                    let avatarContent = '';
-                    let senderName = '';
-                    
-                    if (message.type === 'admin_message') {
-                        avatarContent = `<i class="fas fa-crown" style="color: gold;"></i>`;
-                        senderName = message.adminName || 'مرجان - الإدارة';
-                    } else {
-                        avatarContent = `<i class="fas fa-user"></i>`;
-                        senderName = message.senderName || 'مستخدم';
-                    }
-                    
-                    const unreadIndicator = !readMessages.includes(message.id) && message.type === 'admin_message' ? 
-                        '<div class="conversation-unread"></div>' : '';
-                    
-                    // ✅ استخدام البيانات المحفوظة بدلاً من جلبها مجدداً
+                allMessages.forEach(message => {
+                    // حساب نسبة الاكتمال
                     let displayPercentage = 0;
                     if (userData && userData.competitions && userData.competitions[message.id]) {
                         const competitionData = userData.competitions[message.id];
-                        if (competitionData.percentage !== undefined) {
-                            displayPercentage = competitionData.percentage;
-                        } else {
-                            const successfulRefs = competitionData.successfulReferrals || [];
-                            const successCount = successfulRefs.filter(r => r.status === 'success').length;
-                            const totalRequired = 10;
-                            displayPercentage = Math.round((successCount / totalRequired) * 100);
-                        }
+                        const successfulRefs = competitionData.successfulReferrals || [];
+                        const successCount = successfulRefs.filter(r => r.status === 'success').length;
+                        const requiredReferrals = competitionData.requiredReferrals || message.requiredReferrals || 10;
+                        displayPercentage = Math.min(Math.round((successCount / requiredReferrals) * 100), 100);
                     }
                     
                     const completionPercentage = displayPercentage;
                     const strokeDashoffset = 145 - (145 * completionPercentage / 100);
-
+                    
+                    // علامة عدم القراءة
+                    const unreadIndicator = !readMessages.includes(message.id) && message.type === 'admin_message' ? 
+                        '<div class="conversation-unread"></div>' : '';
+                    
+                    // اختيار الصورة
                     let imageHtml = '';
                     if (message.attachment && message.attachment.type.startsWith('image/')) {
                         imageHtml = `<img src="${message.attachment.url}" style="width: 100%; height: 100%; object-fit: cover; display: block; position: absolute; top: 0; left: 0;">`;
@@ -2172,7 +2232,11 @@
                             </svg>
                         `;
                     }
-
+                    
+                    const conversationItem = document.createElement('div');
+                    conversationItem.className = 'conversation-item';
+                    conversationItem.setAttribute('data-id', message.id);
+                    
                     conversationItem.innerHTML = `
                         <div style="position: relative; overflow: hidden; border-radius: 20px; height: 200px; width: 100%;">
                             <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; transform: scale(1); transform-origin: center;">
@@ -2215,18 +2279,118 @@
                     fragment.appendChild(conversationItem);
                 });
                 
-                // ✅ إضافة جميع البطاقات دفعة واحدة
                 conversationsList.appendChild(fragment);
-                
                 updateChatBadge();
-            }, error => {
-                console.error('Error loading global chat:', error);
+                
+                console.log('✅ تم عرض جميع الرسائل بنجاح');
+                
+            } catch (error) {
+                console.error('❌ خطأ في تحميل الرسائل:', error);
                 conversationsList.innerHTML = `
-                    <div style="text-align: center; padding: 20px; color: red;">
-                        <p>خطأ في تحميل المحادثات</p>
+                    <div style="text-align: center; padding: 40px; color: #d32f2f;">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 3rem; margin-bottom: 15px; display: block;"></i>
+                        <p>حدث خطأ في تحميل المسابقات</p>
+                        <p style="font-size: 0.9rem; margin-top: 10px;">${error.message}</p>
                     </div>
                 `;
-            });
+            }
+        }
+
+        async function loadPermanentCompetitionsForNewUser(userEmail) {
+            try {
+                // جلب المسابقات الدائمة
+                const competitionsSnapshot = await db.collection('permanent_competitions').get();
+                
+                if (competitionsSnapshot.empty) {
+                    console.log('لا توجد مسابقات دائمة');
+                    return;
+                }
+                
+                // جلب بيانات المستخدم
+                const userSnapshot = await db.collection('users')
+                    .where('email', '==', userEmail)
+                    .limit(1)
+                    .get();
+                
+                if (userSnapshot.empty) return;
+                
+                const userDoc = userSnapshot.docs[0];
+                const userData = userDoc.data();
+                const userDocId = userDoc.id;
+                
+                // التأكد من وجود referralCode
+                let userReferralCode = userData.referralCode;
+                if (!userReferralCode) {
+                    userReferralCode = firebase.auth().currentUser.uid.substring(0, 8).toUpperCase();
+                    await db.collection('users').doc(userDocId).update({
+                        referralCode: userReferralCode
+                    });
+                }
+                
+                // إضافة كل مسابقة دائمة للمستخدم
+                const competitionsToAdd = {};
+                
+                competitionsSnapshot.forEach(doc => {
+                    const competition = doc.data();
+                    const competitionId = doc.id;
+                    
+                    // التحقق: إذا المستخدم ليس لديه هذه المسابقة
+                    if (!userData.competitions || !userData.competitions[competitionId]) {
+                        const referralLink = generateReferralLink(competitionId, userReferralCode);
+                        
+                        competitionsToAdd[competitionId] = {
+                            competitionId: competitionId,
+                            percentage: 0,
+                            referralLink: referralLink,
+                            successfulReferrals: [],
+                            rewardPoints: competition.rewardPoints || 0,
+                            requiredReferrals: competition.requiredReferrals || 10, // ← جديد
+                            rewardClaimed: false
+                        };
+                    }
+                });
+                
+                // حفظ المسابقات الجديدة
+                if (Object.keys(competitionsToAdd).length > 0) {
+                    await db.collection('users').doc(userDocId).set({
+                        competitions: competitionsToAdd
+                    }, { merge: true });
+                    
+                    console.log(`✅ تم إضافة ${Object.keys(competitionsToAdd).length} مسابقة للمستخدم الجديد`);
+                }
+                
+            } catch (error) {
+                console.error('❌ خطأ في تحميل المسابقات الدائمة:', error);
+            }
+        }
+        // 🆕 دالة لتحميل رسائل الدردشة الخاصة بالمستخدم
+        async function loadUserChatMessages(userEmail) {
+            try {
+                console.log('📥 جاري تحميل رسائل الدردشة الخاصة...');
+                
+                // البحث عن المستخدم
+                const userSnapshot = await db.collection('users')
+                    .where('email', '==', userEmail)
+                    .limit(1)
+                    .get();
+                
+                if (userSnapshot.empty) {
+                    console.log('❌ لم يتم العثور على المستخدم');
+                    return [];
+                }
+                
+                const userDoc = userSnapshot.docs[0];
+                const userData = userDoc.data();
+                const chatMessages = userData.chatMessages || [];
+                
+                console.log(`✅ تم تحميل ${chatMessages.length} رسالة خاصة`);
+                
+                return chatMessages;
+                
+            } catch (error) {
+                console.error('❌ خطأ في تحميل رسائل الدردشة الخاصة:', error);
+                return [];
+            }
         }
         // إغلاق جميع البطاقات الموسعة
         function closeAllExpandedCards() {
@@ -2247,6 +2411,7 @@
             // ✅ تسجيل الرسالة كمقروءة عند الضغط
             if (!isExpanded && message.type === 'admin_message') {
                 markMessageAsRead(message.id);
+                updateChatBadge();
                 
                 const unreadDot = cardElement.querySelector('.conversation-unread');
                 if (unreadDot) {
@@ -2432,7 +2597,7 @@
                 }
             });
         }
-        // توليد رابط الإحالة
+        // ✅ تأكد من وجود هذه الدالة
         function generateReferralLink(competitionId, userReferralCode) {
             // ✅ استخدام رابط كامل بدلاً من نسبي
             const baseUrl = 'https://moka306.github.io/Tayirj.github.io/index.html';
@@ -2464,6 +2629,85 @@
                 btn.innerHTML = originalHTML;
                 btn.classList.remove('copied');
             }, 2000);
+        }
+        // ✅ أضف هذه الدالة الجديدة
+        async function initializePermanentCompetitionsForNewUser(userEmail) {
+            try {
+                console.log('🔄 جاري تهيئة المسابقات الدائمة للمستخدم الجديد...');
+                
+                // جلب جميع المسابقات الدائمة
+                const competitionsSnapshot = await db.collection('permanent_competitions')
+                    .get();
+                
+                if (competitionsSnapshot.empty) {
+                    console.log('✅ لا توجد مسابقات دائمة لتهيئتها');
+                    return;
+                }
+                
+                // جلب بيانات المستخدم
+                const userSnapshot = await db.collection('users')
+                    .where('email', '==', userEmail)
+                    .limit(1)
+                    .get();
+                
+                if (userSnapshot.empty) {
+                    console.log('❌ لم يتم العثور على المستخدم');
+                    return;
+                }
+                
+                const userDoc = userSnapshot.docs[0];
+                const userData = userDoc.data();
+                const userDocId = userDoc.id;
+                
+                // التحقق من competitions موجود أم لا
+                let userCompetitions = userData.competitions || {};
+                
+                // التأكد من وجود referralCode
+                let userReferralCode = userData.referralCode;
+                if (!userReferralCode) {
+                    userReferralCode = firebase.auth().currentUser.uid.substring(0, 8).toUpperCase();
+                }
+                
+                // إضافة المسابقات الدائمة التي لا يملكها المستخدم
+                let hasNewCompetitions = false;
+                
+                competitionsSnapshot.forEach(doc => {
+                    const competitionId = doc.id;
+                    const competitionData = doc.data();
+                    
+                    // إذا لم يكن لدى المستخدم هذه المسابقة
+                    if (!userCompetitions[competitionId]) {
+                        const referralLink = generateReferralLink(competitionId, userReferralCode);
+                        
+                        userCompetitions[competitionId] = {
+                            competitionId: competitionId,
+                            percentage: 0,
+                            referralLink: referralLink,
+                            successfulReferrals: [],
+                            rewardPoints: competitionData.rewardPoints || 0,
+                            requiredReferrals: competitionData.requiredReferrals || 10,
+                            rewardClaimed: false
+                        };
+                        
+                        hasNewCompetitions = true;
+                    }
+                });
+                
+                // حفظ التحديثات إذا كان هناك مسابقات جديدة
+                if (hasNewCompetitions) {
+                    await db.collection('users').doc(userDocId).update({
+                        competitions: userCompetitions,
+                        referralCode: userReferralCode
+                    });
+                    
+                    console.log('✅ تم تهيئة المسابقات الدائمة للمستخدم بنجاح');
+                } else {
+                    console.log('✅ المستخدم لديه جميع المسابقات الدائمة');
+                }
+                
+            } catch (error) {
+                console.error('❌ خطأ في تهيئة المسابقات الدائمة:', error);
+            }
         }
 
         // تحميل بيانات الإحالة
@@ -2611,71 +2855,42 @@
         }
         // ✅ دالة التحقق من الجائزة وإضافة النقاط
         // ✅ دالة التحقق من الجائزة وإضافة النقاط (محسّنة)
-        async function checkAndAwardPoints(competitionId, userDocId = null) {
-            const currentUser = firebase.auth().currentUser;
-            if (!currentUser) return;
-            
-            // ✅ إضافة console.log للتشخيص
-            console.log('🎁 checkAndAwardPoints - competitionId:', competitionId);
-            
+        async function checkAndAwardPoints(competitionId, userDocId) {
             try {
-                // ✅ التحقق من وجود المسابقة أولاً
-                const competitionDoc = await db.collection('global_chat').doc(competitionId).get();
-                
-                if (!competitionDoc.exists) {
-                    console.error('❌ المسابقة غير موجودة في global_chat:', competitionId);
-                    return;
-                }
-                
-                console.log('✅ المسابقة موجودة في checkAndAwardPoints');
-                
-                // باقي الكود...
-                if (!userDocId) {
-                    const userSnapshot = await db.collection('users')
-                        .where('email', '==', currentUser.email)
-                        .limit(1)
-                        .get();
-                    
-                    if (userSnapshot.empty) return;
-                    userDocId = userSnapshot.docs[0].id;
-                    localStorage.setItem('userDocId', userDocId);
-                }
-                
                 const userDoc = await db.collection('users').doc(userDocId).get();
                 if (!userDoc.exists) return;
                 
                 const userData = userDoc.data();
                 const competitionData = userData.competitions?.[competitionId];
                 
-                if (!competitionData) return;
+                if (!competitionData) {
+                    console.log('❌ المسابقة غير موجودة');
+                    return;
+                }
                 
-                if (competitionData.percentage >= 100 && !competitionData.rewardClaimed) {
-                    const rewardPoints = competitionDoc.data().rewardPoints || 0;
-                    
-                    if (rewardPoints <= 0) {
-                        console.warn('⚠️ لا توجد نقاط مكافأة لهذه المسابقة');
-                        return;
-                    }
-                    
-                    const currentBalance = userData.currentBalance || 0;
-                    const newBalance = currentBalance + rewardPoints;
-                    
-                    console.log(`💰 الرصيد الحالي: ${currentBalance}`);
-                    console.log(`🎁 نقاط المكافأة: ${rewardPoints}`);
-                    console.log(`✨ الرصيد الجديد: ${newBalance}`);
+                // ← جديد: استخدام العدد المخصص
+                const requiredReferrals = competitionData.requiredReferrals || 10;
+                const successCount = competitionData.successfulReferrals?.filter(r => r.status === 'success').length || 0;
+                
+                console.log(`📊 التقدم: ${successCount}/${requiredReferrals}`);
+                
+                // ← معدّل: مقارنة مع العدد المخصص
+                if (successCount >= requiredReferrals && !competitionData.rewardClaimed) {
+                    const rewardPoints = competitionData.rewardPoints || 0;
                     
                     await db.collection('users').doc(userDocId).update({
-                        currentBalance: newBalance,
                         [`competitions.${competitionId}.rewardClaimed`]: true,
-                        [`competitions.${competitionId}.rewardClaimedAt`]: new Date().toISOString()
+                        points: firebase.firestore.FieldValue.increment(rewardPoints)
                     });
                     
-                    console.log(`✅ تم إضافة ${rewardPoints} نقطة للمستخدم!`);
-                    alert(`🎉 مبروك! لقد أكملت المسابقة وحصلت على ${rewardPoints} نقطة ذهبية!`);
+                    console.log(`🎉 تم منح ${rewardPoints} نقطة للمستخدم`);
+                    
+                    // تحديث الواجهة
+                    loadGlobalChat();
                 }
                 
             } catch (error) {
-                console.error('❌ خطأ في التحقق من الجائزة:', error);
+                console.error('❌ خطأ في checkAndAwardPoints:', error);
             }
         }
         async function deleteFailedReferral(competitionId, referralIndex, event) {
@@ -2730,21 +2945,20 @@
         }
 
         // حفظ كود الإحالة في userData عند أول تحميل
+        // ✅ استبدل الكود الموجود بهذا
+        // ✅ عدّل هذا الجزء
         firebase.auth().onAuthStateChanged(async (user) => {
             if (user) {
-                const userDoc = await db.collection('users').doc(user.uid).get();
+                await initializePermanentCompetitionsForNewUser(user.email);
                 
-                if (userDoc.exists) {
-                    const userData = userDoc.data();
-                    
-                    // توليد كود إحالة إذا لم يكن موجوداً
-                    if (!userData.referralCode) {
-                        const referralCode = user.uid.substring(0, 8).toUpperCase();
-                        await db.collection('users').doc(user.uid).update({
-                            referralCode: referralCode
-                        });
-                    }
-                }
+                loadUserNotifications();
+                listenToNotificationsUpdates();
+                
+                // ✅ استدعاء التحديثات الفورية
+                listenToChatUpdates();
+                updateChatBadge(); // تحديث فوري أولي
+                
+                loadGlobalChat();
             }
         });
         
@@ -2830,23 +3044,7 @@
         }
         
         // تحديث شارة المسابقات
-        function updateChatBadge() {
-            // حساب عدد الرسائل غير المقروءة من الإدارة
-            const readMessages = JSON.parse(localStorage.getItem('readMessages')) || [];
-            const unreadCount = globalMessages.filter(msg => 
-                msg.type === 'admin_message' && !readMessages.includes(msg.id)
-            ).length;
-            
-            const badge = document.getElementById('chatBadge');
-            if (badge) {
-                if (unreadCount > 0) {
-                    badge.textContent = unreadCount > 99 ? '99+' : String(unreadCount);
-                    badge.classList.remove('hidden');
-                } else {
-                    badge.classList.add('hidden');
-                }
-            }
-        }
+        
         // إضافة مستمع للتحديثات الفورية على الإشعارات
         function listenToNotificationsUpdates() {
             const user = firebase.auth().currentUser;
@@ -2889,15 +3087,3 @@
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
