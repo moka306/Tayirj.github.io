@@ -9,15 +9,29 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <!-- ✅ Open Graph Meta Tags المحسّنة -->
     <meta property="og:type" content="website">
-    <meta property="og:title" content=" مسابقة مرجان - أعلن واربح">
-    <meta property="og:description" content=" شارك رابطك مع أصدقائك واحصل على نقاط ذهبية ومكافآت قيمة! سجل الآن وابدأ الربح 🚀">
-    <meta property="og:image" content="https://clever-meerkat-4782ea.netlify.app/competition-image.jpg">
+    <meta property="og:site_name" content="مرجان - إعلانات مبوبة">
+    <meta property="og:title" content="🎁 مسابقة مرجان - اربح جوائز قيمة">
+    <meta property="og:description" content="شارك الرابط مع 10 أصدقاء واحصل على نقاط ذهبية ومكافآت فورية! انضم الآن 🚀">
+    <meta property="og:image" content="https://clever-meerkat-4782ea.netlify.app/images/competition-share.jpg">
+    <meta property="og:image:secure_url" content="https://clever-meerkat-4782ea.netlify.app/images/photo4.png">
+    <meta property="og:image:type" content="image/png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
-    <meta property="og:url" content="https://clever-meerkat-4782ea.netlify.app/index.html">
-    <meta property="og:type" content="website">
-    <meta property="fb:app_id" content="ضع_معرف_التطبيق_هنا">
+    <meta property="og:image:alt" content="مسابقة مرجان للإحالات - اربح جوائز">
+    <meta property="og:url" content="https://clever-meerkat-4782ea.netlify.app/chat.html">
+    <meta property="og:locale" content="ar_AR">
+
+    <!-- ✅ Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="🎁 مسابقة مرجان - اربح جوائز قيمة">
+    <meta name="twitter:description" content="شارك الرابط مع 10 أصدقاء واحصل على نقاط ذهبية!">
+    <meta name="twitter:image" content="https://clever-meerkat-4782ea.netlify.app/images/photo4.png">
+
+    <!-- ✅ WhatsApp Specific -->
+    <meta property="og:video" content="">
+    <link rel="image_src" href="https://clever-meerkat-4782ea.netlify.app/images/photo4.png">
     <style>
         /* ============ الإعدادات العامة والهيكل الأساسي ============ */
         * {
@@ -2419,7 +2433,8 @@
         }
         // توليد رابط الإحالة
         function generateReferralLink(competitionId, userReferralCode) {
-            const baseUrl = window.location.origin + window.location.pathname.replace('chat.html', 'index.html');
+            // ✅ استخدام رابط كامل بدلاً من نسبي
+            const baseUrl = 'https://clever-meerkat-4782ea.netlify.app/index.html';
             return `${baseUrl}?ref=${userReferralCode}&competition=${competitionId}`;
         }
 
