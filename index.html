@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -2645,26 +2646,23 @@
 
         document.getElementById('contactMenuLink').addEventListener('click', function(e) {
             e.preventDefault();
-            // صفحة الاتصال بنا لا تتطلب تسجيل دخول
-            window.location.href = 'callus.html';
+            requireLogin('callus.html');
         });
 
         document.getElementById('termsMenuLink').addEventListener('click', function(e) {
             e.preventDefault();
-            // صفحة شروط الاستخدام لا تتطلب تسجيل دخول
-            window.location.href = 'terms%20of%20use.html';
+            requireLogin('terms%20of%20use.html');
+            
         });
 
         document.getElementById('aboutMenuLink').addEventListener('click', function(e) {
             e.preventDefault();
-            // صفحة من نحن لا تتطلب تسجيل دخول
-            window.location.href = 'Who%20we%20are.html';
+            requireLogin('Who%20we%20are.html');
         });
         
         document.getElementById('privacyMenuLink').addEventListener('click', function(e) {
             e.preventDefault();
-            // صفحة سياسة الخصوصية لا تتطلب تسجيل دخول
-            window.location.href = 'privacy%20policy.html';
+            requireLogin('privacy%20policy.html');
         });
         // ============ تحديث رابط إنشاء حساب جديد بالبيانات الموجودة ============
         document.addEventListener('DOMContentLoaded', function() {
