@@ -2365,7 +2365,7 @@
 
         // ============ نظام مراقبة الرسائل الجديدة ============
         function listenToGlobalChat() {
-            db.collection('global_chat')
+            db.collection('permanent_competitions')
                 .orderBy('timestamp', 'desc')
                 .onSnapshot(snapshot => {
                     globalMessages = [];
@@ -2425,8 +2425,10 @@
         firebase.auth().onAuthStateChanged(async (user) => {
             if (user) {
                 console.log("✅ المستخدم مسجل الدخول:", user.email);
+                // بدء مراقبة التحديثات القادمة من global_chat (كما في chat.html)
+                listenToGlobalChat();
 
-                // جلب الرسائل غير المقروءة للمسابقات والدردشة
+                // تحديث شارة المسابقات عند تسجيل الدخول
                 await updateCompetitionsBadge();
             }
         });
@@ -3294,3 +3296,4 @@
     </script>
 </body>
 </html>
+
