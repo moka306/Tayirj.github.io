@@ -1807,7 +1807,7 @@
             }
         }
         function listenToGlobalChat() {
-            db.collection('global_chat')
+            db.collection('permanent_competitions')
                 .orderBy('timestamp', 'desc')
                 .onSnapshot(snapshot => {
                     globalMessages = [];
