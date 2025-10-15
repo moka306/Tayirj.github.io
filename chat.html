@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مرجان - المراسلة</title>
+    <title>Tayirj</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <!-- ✅ Open Graph Meta Tags المحسّنة -->
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Tayirj">
     <meta property="og:title" content="🎁 مسابقة Tayirj - أعلن و استلم ارباح مالية يوميا">
@@ -22,7 +23,8 @@
     <meta property="og:image:alt" content="🎁 مسابقة Tayirj - أعلن و استلم ارباح مالية يوميا">
     <meta property="og:url" content="https://moka306.github.io/Tayirj.github.io/index.html">
     <meta property="og:locale" content="ar_AR">
-    !-- ✅ Twitter Card --
+
+    <!-- ✅ Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="🎁 مسابقة Tayirj - أعلن و استلم ارباح مالية يوميا">
     <meta name="twitter:description" content="تصفح موقعنا الان لتجد ما يلزمك مع اكبر موقع للأعلانات المبوبة في الشرق الأوسط الأن يضم جميع الدول العربية! انضم الآن 🚀">
@@ -1131,12 +1133,7 @@
         }
 
         .nav-badge.hidden {
-            display: none !important;
-        }
-
-        .nav-badge.hidden {
-            display: none !important;
-            visibility: hidden !important;
+            display: none;
         }
         
         /* علامة الرسائل غير المقروءة */
@@ -1687,88 +1684,41 @@
                 badge.classList.add('hidden');
             }
         }
-        // ✅ استبدل الدالة القديمة بهذه
-        async function updateChatBadge() {
-            const user = firebase.auth().currentUser;
-            const badge = document.getElementById('chatBadge');
-            
-            if (!badge) {
-                console.log('❌ عنصر الشارة غير موجود');
-                return;
-            }
-            
-            if (!user) {
-                badge.classList.add('hidden');
-                return;
-            }
-
-            try {
-                const readMessages = JSON.parse(localStorage.getItem('readMessages')) || [];
-                
-                // جلب المسابقات الدائمة
-                const competitionsSnapshot = await db.collection('permanent_competitions').get();
-                
-                let unreadCount = 0;
-                
-                competitionsSnapshot.forEach(doc => {
-                    if (!readMessages.includes(doc.id)) {
-                        unreadCount++;
-                    }
-                });
-                
-                // جلب الرسائل الخاصة
-                const userSnapshot = await db.collection('users')
-                    .where('email', '==', user.email)
-                    .limit(1)
-                    .get();
-                
-                if (!userSnapshot.empty) {
-                    const userData = userSnapshot.docs[0].data();
-                    const chatMessages = userData.chatMessages || [];
-                    
-                    chatMessages.forEach(msg => {
-                        if (msg.type === 'admin_message' && !readMessages.includes(msg.id)) {
-                            unreadCount++;
-                        }
+        
+        // ============ مراقبة رسائل المحادثة العامة ============
+        function listenToGlobalChat() {
+            db.collection('global_chat')
+                .orderBy('timestamp', 'desc')
+                .onSnapshot(snapshot => {
+                    globalChatMessages = [];
+                    snapshot.forEach(doc => {
+                        globalChatMessages.push({
+                            id: doc.id,
+                            ...doc.data()
+                        });
                     });
-                }
-                
-                // ✅ تحديث الشارة بطريقة قوية
-                console.log('📊 عدد الرسائل غير المقروءة:', unreadCount);
-                
+                    updateChatBadge();
+                }, error => {
+                    console.error('خطأ في مراقبة المحادثة العامة:', error);
+                });
+        }
+        // ============ تحديث شارة رسائل المحادثة العامة ============
+        function updateChatBadge() {
+            const readMessages = JSON.parse(localStorage.getItem('readMessages')) || [];
+            const unreadCount = globalChatMessages.filter(msg => 
+                msg.type === 'admin_message' && !readMessages.includes(msg.id)
+            ).length;
+            
+            const badge = document.getElementById('chatBadge');
+            if (badge) {
                 if (unreadCount > 0) {
                     badge.textContent = unreadCount > 99 ? '99+' : String(unreadCount);
-                    badge.className = 'nav-badge'; // إزالة hidden
-                    // لا نستخدم style مباشرة، نعتمد على CSS فقط
+                    badge.classList.remove('hidden');
                 } else {
-                    badge.className = 'nav-badge hidden'; // إضافة hidden
+                    badge.classList.add('hidden');
                 }
-                
-            } catch (error) {
-                console.error('❌ خطأ في تحديث شارة المسابقات:', error);
             }
         }
-        // ✅ أضف هذه الدالة الجديدة
-        function listenToChatUpdates() {
-            const user = firebase.auth().currentUser;
-            if (!user) return;
-            
-            // 1️⃣ الاستماع للمسابقات الدائمة
-            db.collection('permanent_competitions')
-                .onSnapshot(() => {
-                    updateChatBadge();
-                });
-            
-            // 2️⃣ الاستماع لرسائل المستخدم الخاصة
-            db.collection('users')
-                .where('email', '==', user.email)
-                .limit(1)
-                .onSnapshot(() => {
-                    updateChatBadge();
-                });
-        }
-       
-        
         // دالة لإضافة رسالة إلى نافذة الدردشة
         function addMessageToChat(message) {
             const messageDiv = document.createElement('div');
@@ -1837,7 +1787,7 @@
                                 </div>
                                 <div class="holo-sender-info">
                                     <div class="holo-sender-name">${message.adminName || 'مرجان - الإدارة'}</div>
-                                    <div class="holo-completion-status">نسبة الاكتمال:: ${completionPercentage}% (${successCount}/${requiredReferrals})
+                                    <div class="holo-completion-status">نسبة الاكتمال: ${completionPercentage}%</div>
                                 </div>
                             </div>
                             
@@ -1935,7 +1885,7 @@
                             </div>
                             <div class="holo-sender-info">
                                 <div class="holo-sender-name">${message.adminName || 'مرجان - الإدارة'}</div>
-                                <div class="holo-completion-status">نسبة الاكتمال: ${completionPercentage}% (${successCount}/${requiredReferrals})
+                                <div class="holo-completion-status">نسبة الاكتمال: ${completionPercentage}%</div>
                             </div>
                         </div>
                         
@@ -2008,7 +1958,6 @@
         const messageInput = document.getElementById('messageInput');
         const sendMessageBtn = document.getElementById('sendMessage');
         const conversationsList = document.getElementById('conversationsList');
-        const chatMessagesContainer = document.getElementById('conversationsList'); 
         //const conversationSearch = document.getElementById('conversationSearch');
         
         // بيانات المحادثات
@@ -2059,7 +2008,6 @@
                     loadUserNotifications(); // ✅ لتحميل الإشعارات مرة واحدة
                     listenToNotificationsUpdates(); // ✅ للاستماع للتحديثات الفورية
                     loadGlobalChat();
-                    loadPermanentCompetitionsForNewUser(user.email);
                 }
             });
         });
@@ -2104,293 +2052,231 @@
         }
         
         // تحميل المحادثات العامة من Firebase
-        async function loadGlobalChat() {
-            const user = firebase.auth().currentUser;
-            if (!user) {
-                console.log('❌ لا يوجد مستخدم مسجل دخول');
-                conversationsList.innerHTML = '<p style="text-align: center; padding: 20px;">يرجى تسجيل الدخول لعرض المسابقات</p>';
-                return;
-            }
-
-            try {
-                // ✅ إظهار أيقونة التحميل
-                conversationsList.innerHTML = `
-                    <div class="loading-spinner">
-                        <div class="spinner"></div>
-                        <div class="loading-text">جاري تحميل المسابقات...</div>
-                        <div class="loading-subtext">يرجى الانتظار قليلاً</div>
-                    </div>
-                `;
-                
-                console.log('📥 جاري تحميل المسابقات والرسائل...');
-                
-                // 1️⃣ تحميل المسابقات العامة من permanent_competitions
-                const competitionsSnapshot = await db.collection('permanent_competitions')
-                    .orderBy('timestamp', 'desc')
-                    .get();
-                
-                const permanentMessages = [];
-                competitionsSnapshot.forEach(doc => {
-                    permanentMessages.push({
-                        id: doc.id,
-                        ...doc.data(),
-                        source: 'permanent'
-                    });
-                });
-                
-                console.log(`✅ تم تحميل ${permanentMessages.length} مسابقة عامة`);
-                
-                // 2️⃣ تحميل الرسائل الخاصة بالمستخدم
-                const userSnapshot = await db.collection('users')
-                    .where('email', '==', user.email)
+        // استبدل دالة loadGlobalChat() الموجودة بهذه النسخة المحدثة
+        function loadGlobalChat() {
+            conversationsList.innerHTML = `
+                <div class="loading-spinner">
+                    <div class="spinner"></div>
+                    <div class="loading-text">جاري تحميل المسابقات...</div>
+                    <div class="loading-subtext">يرجى الانتظار قليلاً</div>
+                </div>
+            `;
+            
+            const currentUser = firebase.auth().currentUser;
+            
+            // ✅ جلب الرسائل من permanent_competitions
+            const permanentCompetitionsPromise = db.collection('permanent_competitions')
+                .orderBy('timestamp', 'desc')
+                .get();
+            
+            // ✅ جلب الرسائل الخاصة بالمستخدم (إن وُجد)
+            let userMessagesPromise = Promise.resolve({ empty: true, docs: [] });
+            
+            if (currentUser) {
+                userMessagesPromise = db.collection('users')
+                    .where('email', '==', currentUser.email)
                     .limit(1)
-                    .get();
-                
-                let userMessages = [];
-                let userData = null;
-                
-                if (!userSnapshot.empty) {
-                    userData = userSnapshot.docs[0].data();
-                    userMessages = userData.chatMessages || [];
-                    
-                    userMessages = userMessages.map(msg => ({
-                        ...msg,
-                        source: 'private'
-                    }));
-                    
-                    console.log(`✅ تم تحميل ${userMessages.length} رسالة خاصة`);
-                }
-                
-                // 3️⃣ دمج الرسائل معاً
-                const allMessages = [...permanentMessages, ...userMessages];
-                
-                // 4️⃣ ترتيب حسب التاريخ (الأحدث أولاً)
-                allMessages.sort((a, b) => {
-                    const timeA = a.timestamp?.toDate ? a.timestamp.toDate() : new Date(a.timestamp);
-                    const timeB = b.timestamp?.toDate ? b.timestamp.toDate() : new Date(b.timestamp);
-                    return timeB - timeA;
-                });
-                
-                console.log(`✅ إجمالي الرسائل: ${allMessages.length}`);
-                
-                // 5️⃣ التحقق من وجود رسائل
-                if (allMessages.length === 0) {
-                    conversationsList.innerHTML = `
-                        <div style="text-align: center; padding: 40px; color: #999;">
-                            <i class="fas fa-inbox" style="font-size: 3rem; margin-bottom: 15px; display: block;"></i>
-                            <p>لا توجد مسابقات حالياً</p>
-                        </div>
-                    `;
-                    return;
-                }
-                
-                // 6️⃣ عرض الرسائل بالتصميم الأصلي
-                conversationsList.innerHTML = '';
-                const readMessages = JSON.parse(localStorage.getItem('readMessages')) || [];
-                const fragment = document.createDocumentFragment();
-                
-                allMessages.forEach(message => {
-                    // حساب نسبة الاكتمال
-                    let displayPercentage = 0;
-                    if (userData && userData.competitions && userData.competitions[message.id]) {
-                        const competitionData = userData.competitions[message.id];
-                        const successfulRefs = competitionData.successfulReferrals || [];
-                        const successCount = successfulRefs.filter(r => r.status === 'success').length;
-                        const requiredReferrals = competitionData.requiredReferrals || message.requiredReferrals || 10;
-                        displayPercentage = Math.min(Math.round((successCount / requiredReferrals) * 100), 100);
-                    }
-                    
-                    const completionPercentage = displayPercentage;
-                    const strokeDashoffset = 145 - (145 * completionPercentage / 100);
-                    
-                    // علامة عدم القراءة
-                    const unreadIndicator = !readMessages.includes(message.id) && message.type === 'admin_message' ? 
-                        '<div class="conversation-unread"></div>' : '';
-                    
-                    // اختيار الصورة
-                    let imageHtml = '';
-                    if (message.attachment && message.attachment.type.startsWith('image/')) {
-                        imageHtml = `<img src="${message.attachment.url}" style="width: 100%; height: 100%; object-fit: cover; display: block; position: absolute; top: 0; left: 0;">`;
-                    } else {
-                        imageHtml = `
-                            <svg style="width: 100%; height: 100%; position: absolute; top: 0; left: 0; display: block;" viewBox="0 0 800 350" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
-                                <defs>
-                                    <linearGradient id="sky${message.id}" x1="0%" y1="0%" x2="0%" y2="100%">
-                                        <stop offset="0%" style="stop-color:#1e3c72;stop-opacity:1" />
-                                        <stop offset="100%" style="stop-color:#2a5298;stop-opacity:1" />
-                                    </linearGradient>
-                                    <linearGradient id="mountain${message.id}" x1="0%" y1="0%" x2="0%" y2="100%">
-                                        <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
-                                        <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
-                                    </linearGradient>
-                                </defs>
-                                <rect width="800" height="350" fill="url(#sky${message.id})"/>
-                                <circle cx="700" cy="80" r="40" fill="#ffd700" opacity="0.9"/>
-                                <path d="M 0 240 Q 200 150, 400 190 T 800 170 L 800 350 L 0 350 Z" fill="#2a4d7c" opacity="0.6"/>
-                                <path d="M 0 270 Q 150 180, 300 220 T 600 210 T 800 250 L 800 350 L 0 350 Z" fill="url(#mountain${message.id})" opacity="0.8"/>
-                                <path d="M 0 300 L 200 210 L 350 270 L 500 220 L 650 290 L 800 250 L 800 350 L 0 350 Z" fill="#5a4a9f" opacity="0.9"/>
-                            </svg>
-                        `;
-                    }
-                    
-                    const conversationItem = document.createElement('div');
-                    conversationItem.className = 'conversation-item';
-                    conversationItem.setAttribute('data-id', message.id);
-                    
-                    conversationItem.innerHTML = `
-                        <div style="position: relative; overflow: hidden; border-radius: 20px; height: 200px; width: 100%;">
-                            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; transform: scale(1); transform-origin: center;">
-                                ${imageHtml}
-                            </div>
+                    .get()
+                    .then(snapshot => {
+                        if (!snapshot.empty) {
+                            const userData = snapshot.docs[0].data();
+                            const chatMessages = userData.chatMessages || [];
                             
-                            <div style="position: absolute; bottom: 0; right: 20px; padding: 15px; z-index: 2; max-width: 70%;">
-                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-                                    <div style="width: 45px; height: 45px; position: relative; flex-shrink: 0;">
-                                        <svg viewBox="0 0 60 60" style="transform: rotate(-90deg); width: 100%; height: 100%;">
-                                            <defs>
-                                                <linearGradient id="grad${message.id}" x1="0%" y1="0%" x2="100%" y2="100%">
-                                                    <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
-                                                    <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
-                                                </linearGradient>
-                                            </defs>
-                                            <circle cx="30" cy="30" r="23" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="4"></circle>
-                                            <circle cx="30" cy="30" r="23" fill="none" stroke="url(#grad${message.id})" stroke-width="4" stroke-linecap="round" stroke-dasharray="145" stroke-dashoffset="${strokeDashoffset}"></circle>
-                                        </svg>
-                                        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 0.7rem; font-weight: 700; text-shadow: 0 3px 12px rgba(0,0,0,1), 0 0 8px rgba(0,0,0,0.8);">${completionPercentage}%</div>
-                                    </div>
-                                    <div style="flex: 1;">
-                                        <div style="color: white; font-size: 1rem; font-weight: 600; text-shadow: 0 3px 15px rgba(0,0,0,1), 0 0 10px rgba(0,0,0,0.9); margin-bottom: 2px; text-align: right; padding-right: 5px;">${message.title || 'مسابقة جديدة'}</div>
-                                        <div style="color: rgba(255,255,255,0.95); font-size: 0.75rem; text-shadow: 0 2px 10px rgba(0,0,0,1), 0 0 8px rgba(0,0,0,0.8);">نسبة الاكتمال: ${completionPercentage}%</div>
-                                    </div>
+                            // تحويل chatMessages إلى صيغة مشابهة لـ snapshot
+                            return {
+                                empty: chatMessages.length === 0,
+                                docs: chatMessages.map(msg => ({
+                                    id: msg.id,
+                                    data: () => msg
+                                }))
+                            };
+                        }
+                        return { empty: true, docs: [] };
+                    })
+                    .catch(error => {
+                        console.error('خطأ في جلب رسائل المستخدم:', error);
+                        return { empty: true, docs: [] };
+                    });
+            }
+            
+            // ✅ دمج النتائج من المصدرين
+            Promise.all([permanentCompetitionsPromise, userMessagesPromise])
+                .then(async ([permanentSnapshot, userMessages]) => {
+                    conversationsList.innerHTML = '';
+                    globalMessages = [];
+                    unreadMessages = [];
+                    
+                    // معالجة permanent_competitions
+                    permanentSnapshot.forEach(doc => {
+                        const docData = doc.data();
+                        const message = {
+                            ...docData,
+                            id: doc.id,
+                            isPermanent: true
+                        };
+                        globalMessages.push(message);
+                    });
+                    
+                    // معالجة chatMessages للمستخدم
+                    if (!userMessages.empty) {
+                        userMessages.docs.forEach(doc => {
+                            const message = doc.data();
+                            globalMessages.push({
+                                ...message,
+                                isPermanent: false
+                            });
+                        });
+                    }
+                    
+                    // ترتيب الرسائل حسب التاريخ
+                    globalMessages.sort((a, b) => {
+                        const timeA = a.timestamp?.toDate ? a.timestamp.toDate() : new Date(a.timestamp);
+                        const timeB = b.timestamp?.toDate ? b.timestamp.toDate() : new Date(b.timestamp);
+                        return timeB - timeA;
+                    });
+                    
+                    if (globalMessages.length === 0) {
+                        conversationsList.innerHTML = `
+                            <div style="text-align: center; padding: 20px; color: #666;">
+                                <i class="fas fa-comments" style="font-size: 3rem; margin-bottom: 15px; color: #ccc;"></i>
+                                <p>لا توجد رسائل عامة بعد</p>
+                                <p style="font-size: 0.9rem; color: #888;">سيظهر هنا الرسائل العامة من الإدارة</p>
+                            </div>
+                        `;
+                        updateChatBadge();
+                        return;
+                    }
+                    
+                    // جلب بيانات المستخدم مرة واحدة
+                    let userData = null;
+                    if (currentUser) {
+                        try {
+                            const userDoc = await db.collection('users').doc(currentUser.uid).get();
+                            if (userDoc.exists) {
+                                userData = userDoc.data();
+                                console.log('✅ بيانات المستخدم في loadGlobalChat:', userData);
+                            }
+                        } catch (error) {
+                            console.error('خطأ في جلب بيانات المستخدم:', error);
+                        }
+                    }
+                    
+                    const fragment = document.createDocumentFragment();
+                    
+                    // عرض كل رسالة
+                    globalMessages.forEach(message => {
+                        cachedCompetitions[message.id] = message;
+                        
+                        const readMessages = JSON.parse(localStorage.getItem('readMessages')) || [];
+                        if (!readMessages.includes(message.id) && message.type === 'admin_message') {
+                            unreadMessages.push(message.id);
+                        }
+                        
+                        const conversationItem = document.createElement('div');
+                        conversationItem.className = 'conversation-item';
+                        conversationItem.setAttribute('data-id', message.id);
+                        
+                        let avatarContent = '<i class="fas fa-crown" style="color: gold;"></i>';
+                        let senderName = message.adminName || 'مرجان - الإدارة';
+                        
+                        const unreadIndicator = !readMessages.includes(message.id) && message.type === 'admin_message' ? 
+                            '<div class="conversation-unread"></div>' : '';
+                        
+                        let displayPercentage = 0;
+                        if (userData && userData.competitions && userData.competitions[message.id]) {
+                            const competitionData = userData.competitions[message.id];
+                            if (competitionData.percentage !== undefined) {
+                                displayPercentage = competitionData.percentage;
+                            } else {
+                                const successfulRefs = competitionData.successfulReferrals || [];
+                                const successCount = successfulRefs.filter(r => r.status === 'success').length;
+                                const totalRequired = message.requiredReferrals || 10;
+                                displayPercentage = Math.round((successCount / totalRequired) * 100);
+                            }
+                        }
+                        
+                        const completionPercentage = displayPercentage;
+                        const strokeDashoffset = 145 - (145 * completionPercentage / 100);
+
+                        let imageHtml = '';
+                        if (message.attachment && message.attachment.type.startsWith('image/')) {
+                            imageHtml = `<img src="${message.attachment.url}" style="width: 100%; height: 100%; object-fit: cover; display: block; position: absolute; top: 0; left: 0;">`;
+                        } else {
+                            imageHtml = `
+                                <svg style="width: 100%; height: 100%; position: absolute; top: 0; left: 0; display: block;" viewBox="0 0 800 350" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+                                    <defs>
+                                        <linearGradient id="sky${message.id}" x1="0%" y1="0%" x2="0%" y2="100%">
+                                            <stop offset="0%" style="stop-color:#1e3c72;stop-opacity:1" />
+                                            <stop offset="100%" style="stop-color:#2a5298;stop-opacity:1" />
+                                        </linearGradient>
+                                        <linearGradient id="mountain${message.id}" x1="0%" y1="0%" x2="0%" y2="100%">
+                                            <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+                                            <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+                                        </linearGradient>
+                                    </defs>
+                                    <rect width="800" height="350" fill="url(#sky${message.id})"/>
+                                    <circle cx="700" cy="80" r="40" fill="#ffd700" opacity="0.9"/>
+                                    <path d="M 0 240 Q 200 150, 400 190 T 800 170 L 800 350 L 0 350 Z" fill="#2a4d7c" opacity="0.6"/>
+                                    <path d="M 0 270 Q 150 180, 300 220 T 600 210 T 800 250 L 800 350 L 0 350 Z" fill="url(#mountain${message.id})" opacity="0.8"/>
+                                    <path d="M 0 300 L 200 210 L 350 270 L 500 220 L 650 290 L 800 250 L 800 350 L 0 350 Z" fill="#5a4a9f" opacity="0.9"/>
+                                </svg>
+                            `;
+                        }
+
+                        conversationItem.innerHTML = `
+                            <div style="position: relative; overflow: hidden; border-radius: 20px; height: 200px; width: 100%;">
+                                <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; transform: scale(1); transform-origin: center;">
+                                    ${imageHtml}
                                 </div>
                                 
-                                <p style="color: white; font-size: 0.95rem; line-height: 1.6; margin-bottom: 10px; text-shadow: 0 2px 15px rgba(0,0,0,1), 0 0 10px rgba(0,0,0,0.8); overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">${message.message}</p>
-                                <div style="color: rgba(255,255,255,0.9); font-size: 0.8rem; text-shadow: 0 2px 10px rgba(0,0,0,1), 0 0 8px rgba(0,0,0,0.8);">${formatTime(message.timestamp?.toDate())}</div>
+                                <div style="position: absolute; bottom: 0; right: 20px; padding: 15px; z-index: 2; max-width: 70%;">
+                                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                        <div style="width: 45px; height: 45px; position: relative; flex-shrink: 0;">
+                                            <svg viewBox="0 0 60 60" style="transform: rotate(-90deg); width: 100%; height: 100%;">
+                                                <defs>
+                                                    <linearGradient id="grad${message.id}" x1="0%" y1="0%" x2="100%" y2="100%">
+                                                        <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+                                                        <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+                                                    </linearGradient>
+                                                </defs>
+                                                <circle cx="30" cy="30" r="23" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="4"></circle>
+                                                <circle cx="30" cy="30" r="23" fill="none" stroke="url(#grad${message.id})" stroke-width="4" stroke-linecap="round" stroke-dasharray="145" stroke-dashoffset="${strokeDashoffset}"></circle>
+                                            </svg>
+                                            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 0.7rem; font-weight: 700; text-shadow: 0 3px 12px rgba(0,0,0,1), 0 0 8px rgba(0,0,0,0.8);">${completionPercentage}%</div>
+                                        </div>
+                                        <div style="flex: 1;">
+                                            <div style="color: white; font-size: 1rem; font-weight: 600; text-shadow: 0 3px 15px rgba(0,0,0,1), 0 0 10px rgba(0,0,0,0.9); margin-bottom: 2px; text-align: right; padding-right: 5px;">${message.title || 'مسابقة جديدة'}</div>
+                                            <div style="color: rgba(255,255,255,0.95); font-size: 0.75rem; text-shadow: 0 2px 10px rgba(0,0,0,1), 0 0 8px rgba(0,0,0,0.8);">نسبة الاكتمال: ${completionPercentage}%</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <p style="color: white; font-size: 0.95rem; line-height: 1.6; margin-bottom: 10px; text-shadow: 0 2px 15px rgba(0,0,0,1), 0 0 10px rgba(0,0,0,0.8); overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">${message.message}</p>
+                                    <div style="color: rgba(255,255,255,0.9); font-size: 0.8rem; text-shadow: 0 2px 10px rgba(0,0,0,1), 0 0 8px rgba(0,0,0,0.8);">${formatTime(message.timestamp?.toDate())}</div>
+                                </div>
                             </div>
-                        </div>
-                        ${unreadIndicator}
-                    `;
-                    
-                    conversationItem.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        toggleCardExpansion(conversationItem, message);
-                    });
-                    
-                    fragment.appendChild(conversationItem);
-                });
-                
-                conversationsList.appendChild(fragment);
-                updateChatBadge();
-                
-                console.log('✅ تم عرض جميع الرسائل بنجاح');
-                
-            } catch (error) {
-                console.error('❌ خطأ في تحميل الرسائل:', error);
-                conversationsList.innerHTML = `
-                    <div style="text-align: center; padding: 40px; color: #d32f2f;">
-                        <i class="fas fa-exclamation-triangle" style="font-size: 3rem; margin-bottom: 15px; display: block;"></i>
-                        <p>حدث خطأ في تحميل المسابقات</p>
-                        <p style="font-size: 0.9rem; margin-top: 10px;">${error.message}</p>
-                    </div>
-                `;
-            }
-        }
-
-        async function loadPermanentCompetitionsForNewUser(userEmail) {
-            try {
-                // جلب المسابقات الدائمة
-                const competitionsSnapshot = await db.collection('permanent_competitions').get();
-                
-                if (competitionsSnapshot.empty) {
-                    console.log('لا توجد مسابقات دائمة');
-                    return;
-                }
-                
-                // جلب بيانات المستخدم
-                const userSnapshot = await db.collection('users')
-                    .where('email', '==', userEmail)
-                    .limit(1)
-                    .get();
-                
-                if (userSnapshot.empty) return;
-                
-                const userDoc = userSnapshot.docs[0];
-                const userData = userDoc.data();
-                const userDocId = userDoc.id;
-                
-                // التأكد من وجود referralCode
-                let userReferralCode = userData.referralCode;
-                if (!userReferralCode) {
-                    userReferralCode = firebase.auth().currentUser.uid.substring(0, 8).toUpperCase();
-                    await db.collection('users').doc(userDocId).update({
-                        referralCode: userReferralCode
-                    });
-                }
-                
-                // إضافة كل مسابقة دائمة للمستخدم
-                const competitionsToAdd = {};
-                
-                competitionsSnapshot.forEach(doc => {
-                    const competition = doc.data();
-                    const competitionId = doc.id;
-                    
-                    // التحقق: إذا المستخدم ليس لديه هذه المسابقة
-                    if (!userData.competitions || !userData.competitions[competitionId]) {
-                        const referralLink = generateReferralLink(competitionId, userReferralCode);
+                            ${unreadIndicator}
+                        `;
                         
-                        competitionsToAdd[competitionId] = {
-                            competitionId: competitionId,
-                            percentage: 0,
-                            referralLink: referralLink,
-                            successfulReferrals: [],
-                            rewardPoints: competition.rewardPoints || 0,
-                            requiredReferrals: competition.requiredReferrals || 10, // ← جديد
-                            rewardClaimed: false
-                        };
-                    }
-                });
-                
-                // حفظ المسابقات الجديدة
-                if (Object.keys(competitionsToAdd).length > 0) {
-                    await db.collection('users').doc(userDocId).set({
-                        competitions: competitionsToAdd
-                    }, { merge: true });
+                        conversationItem.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            toggleCardExpansion(conversationItem, message);
+                        });
+                        
+                        fragment.appendChild(conversationItem);
+                    });
                     
-                    console.log(`✅ تم إضافة ${Object.keys(competitionsToAdd).length} مسابقة للمستخدم الجديد`);
-                }
-                
-            } catch (error) {
-                console.error('❌ خطأ في تحميل المسابقات الدائمة:', error);
-            }
-        }
-        // 🆕 دالة لتحميل رسائل الدردشة الخاصة بالمستخدم
-        async function loadUserChatMessages(userEmail) {
-            try {
-                console.log('📥 جاري تحميل رسائل الدردشة الخاصة...');
-                
-                // البحث عن المستخدم
-                const userSnapshot = await db.collection('users')
-                    .where('email', '==', userEmail)
-                    .limit(1)
-                    .get();
-                
-                if (userSnapshot.empty) {
-                    console.log('❌ لم يتم العثور على المستخدم');
-                    return [];
-                }
-                
-                const userDoc = userSnapshot.docs[0];
-                const userData = userDoc.data();
-                const chatMessages = userData.chatMessages || [];
-                
-                console.log(`✅ تم تحميل ${chatMessages.length} رسالة خاصة`);
-                
-                return chatMessages;
-                
-            } catch (error) {
-                console.error('❌ خطأ في تحميل رسائل الدردشة الخاصة:', error);
-                return [];
-            }
+                    conversationsList.appendChild(fragment);
+                    updateChatBadge();
+                    
+                })
+                .catch(error => {
+                    console.error('Error loading global chat:', error);
+                    conversationsList.innerHTML = `
+                        <div style="text-align: center; padding: 20px; color: red;">
+                            <p>خطأ في تحميل المحادثات</p>
+                        </div>
+                    `;
+                });
         }
         // إغلاق جميع البطاقات الموسعة
         function closeAllExpandedCards() {
@@ -2405,13 +2291,13 @@
 
         // توسيع/طي البطاقة
         // توسيع/طي البطاقة
+        // توسيع/طي البطاقة
         async function toggleCardExpansion(cardElement, message) {
             const isExpanded = cardElement.classList.contains('expanded');
             
             // ✅ تسجيل الرسالة كمقروءة عند الضغط
             if (!isExpanded && message.type === 'admin_message') {
                 markMessageAsRead(message.id);
-                updateChatBadge();
                 
                 const unreadDot = cardElement.querySelector('.conversation-unread');
                 if (unreadDot) {
@@ -2424,22 +2310,53 @@
             if (!isExpanded) {
                 const currentUser = firebase.auth().currentUser;
                 
-                // ✅ التحقق من وجود المسابقة في global_chat أولاً
-                console.log('🔍 التحقق من المسابقة:', message.id);
+                // ✅ التحقق من وجود المسابقة بناءً على نوعها
+                console.log('🔍 التحقق من المسابقة/الرسالة:', message.id, 'isPermanent:', message.isPermanent);
                 
                 try {
-                    const competitionDoc = await db.collection('global_chat').doc(message.id).get();
-                    
-                    if (!competitionDoc.exists) {
-                        console.error('❌ المسابقة غير موجودة:', message.id);
-                        alert('عذراً، هذه المسابقة لم تعد متاحة');
-                        return;
+                    if (message.isPermanent) {
+                        // ✅ للرسائل الدائمة: التحقق من permanent_competitions
+                        const competitionDoc = await db.collection('permanent_competitions').doc(message.id).get();
+                        
+                        if (!competitionDoc.exists) {
+                            console.error('❌ المسابقة غير موجودة في permanent_competitions:', message.id);
+                            alert('عذراً، هذه المسابقة لم تعد متاحة');
+                            return;
+                        }
+                        
+                        console.log('✅ المسابقة موجودة في permanent_competitions:', competitionDoc.data());
+                    } else {
+                        // ✅ للرسائل الخاصة: التحقق من chatMessages في مستند المستخدم
+                        if (currentUser) {
+                            const userSnapshot = await db.collection('users')
+                                .where('email', '==', currentUser.email)
+                                .limit(1)
+                                .get();
+                            
+                            if (userSnapshot.empty) {
+                                console.error('❌ المستخدم غير موجود');
+                                alert('عذراً، لا يمكن الوصول إلى هذه الرسالة');
+                                return;
+                            }
+                            
+                            const userData = userSnapshot.docs[0].data();
+                            const chatMessage = userData.chatMessages?.find(msg => msg.id === message.id);
+                            
+                            if (!chatMessage) {
+                                console.error('❌ الرسالة غير موجودة في chatMessages:', message.id);
+                                alert('عذراً، هذه الرسالة لم تعد متاحة');
+                                return;
+                            }
+                            
+                            console.log('✅ الرسالة موجودة في chatMessages:', chatMessage);
+                        } else {
+                            alert('يجب تسجيل الدخول لعرض هذه الرسالة');
+                            return;
+                        }
                     }
                     
-                    console.log('✅ المسابقة موجودة:', competitionDoc.data());
-                    
                 } catch (error) {
-                    console.error('❌ خطأ في التحقق من المسابقة:', error);
+                    console.error('❌ خطأ في التحقق من المسابقة/الرسالة:', error);
                     return;
                 }
                 
@@ -2560,6 +2477,7 @@
                 }, 100);
             }
         }
+
         
         // إرسال رسالة من المستخدم
         async function sendUserMessage(messageText) {
@@ -2597,7 +2515,7 @@
                 }
             });
         }
-        // ✅ تأكد من وجود هذه الدالة
+        // توليد رابط الإحالة
         function generateReferralLink(competitionId, userReferralCode) {
             // ✅ استخدام رابط كامل بدلاً من نسبي
             const baseUrl = 'https://moka306.github.io/Tayirj.github.io/index.html';
@@ -2629,85 +2547,6 @@
                 btn.innerHTML = originalHTML;
                 btn.classList.remove('copied');
             }, 2000);
-        }
-        // ✅ أضف هذه الدالة الجديدة
-        async function initializePermanentCompetitionsForNewUser(userEmail) {
-            try {
-                console.log('🔄 جاري تهيئة المسابقات الدائمة للمستخدم الجديد...');
-                
-                // جلب جميع المسابقات الدائمة
-                const competitionsSnapshot = await db.collection('permanent_competitions')
-                    .get();
-                
-                if (competitionsSnapshot.empty) {
-                    console.log('✅ لا توجد مسابقات دائمة لتهيئتها');
-                    return;
-                }
-                
-                // جلب بيانات المستخدم
-                const userSnapshot = await db.collection('users')
-                    .where('email', '==', userEmail)
-                    .limit(1)
-                    .get();
-                
-                if (userSnapshot.empty) {
-                    console.log('❌ لم يتم العثور على المستخدم');
-                    return;
-                }
-                
-                const userDoc = userSnapshot.docs[0];
-                const userData = userDoc.data();
-                const userDocId = userDoc.id;
-                
-                // التحقق من competitions موجود أم لا
-                let userCompetitions = userData.competitions || {};
-                
-                // التأكد من وجود referralCode
-                let userReferralCode = userData.referralCode;
-                if (!userReferralCode) {
-                    userReferralCode = firebase.auth().currentUser.uid.substring(0, 8).toUpperCase();
-                }
-                
-                // إضافة المسابقات الدائمة التي لا يملكها المستخدم
-                let hasNewCompetitions = false;
-                
-                competitionsSnapshot.forEach(doc => {
-                    const competitionId = doc.id;
-                    const competitionData = doc.data();
-                    
-                    // إذا لم يكن لدى المستخدم هذه المسابقة
-                    if (!userCompetitions[competitionId]) {
-                        const referralLink = generateReferralLink(competitionId, userReferralCode);
-                        
-                        userCompetitions[competitionId] = {
-                            competitionId: competitionId,
-                            percentage: 0,
-                            referralLink: referralLink,
-                            successfulReferrals: [],
-                            rewardPoints: competitionData.rewardPoints || 0,
-                            requiredReferrals: competitionData.requiredReferrals || 10,
-                            rewardClaimed: false
-                        };
-                        
-                        hasNewCompetitions = true;
-                    }
-                });
-                
-                // حفظ التحديثات إذا كان هناك مسابقات جديدة
-                if (hasNewCompetitions) {
-                    await db.collection('users').doc(userDocId).update({
-                        competitions: userCompetitions,
-                        referralCode: userReferralCode
-                    });
-                    
-                    console.log('✅ تم تهيئة المسابقات الدائمة للمستخدم بنجاح');
-                } else {
-                    console.log('✅ المستخدم لديه جميع المسابقات الدائمة');
-                }
-                
-            } catch (error) {
-                console.error('❌ خطأ في تهيئة المسابقات الدائمة:', error);
-            }
         }
 
         // تحميل بيانات الإحالة
@@ -2855,42 +2694,71 @@
         }
         // ✅ دالة التحقق من الجائزة وإضافة النقاط
         // ✅ دالة التحقق من الجائزة وإضافة النقاط (محسّنة)
-        async function checkAndAwardPoints(competitionId, userDocId) {
+        async function checkAndAwardPoints(competitionId, userDocId = null) {
+            const currentUser = firebase.auth().currentUser;
+            if (!currentUser) return;
+            
+            // ✅ إضافة console.log للتشخيص
+            console.log('🎁 checkAndAwardPoints - competitionId:', competitionId);
+            
             try {
+                // ✅ التحقق من وجود المسابقة أولاً
+                const competitionDoc = await db.collection('global_chat').doc(competitionId).get();
+                
+                if (!competitionDoc.exists) {
+                    console.error('❌ المسابقة غير موجودة في global_chat:', competitionId);
+                    return;
+                }
+                
+                console.log('✅ المسابقة موجودة في checkAndAwardPoints');
+                
+                // باقي الكود...
+                if (!userDocId) {
+                    const userSnapshot = await db.collection('users')
+                        .where('email', '==', currentUser.email)
+                        .limit(1)
+                        .get();
+                    
+                    if (userSnapshot.empty) return;
+                    userDocId = userSnapshot.docs[0].id;
+                    localStorage.setItem('userDocId', userDocId);
+                }
+                
                 const userDoc = await db.collection('users').doc(userDocId).get();
                 if (!userDoc.exists) return;
                 
                 const userData = userDoc.data();
                 const competitionData = userData.competitions?.[competitionId];
                 
-                if (!competitionData) {
-                    console.log('❌ المسابقة غير موجودة');
-                    return;
-                }
+                if (!competitionData) return;
                 
-                // ← جديد: استخدام العدد المخصص
-                const requiredReferrals = competitionData.requiredReferrals || 10;
-                const successCount = competitionData.successfulReferrals?.filter(r => r.status === 'success').length || 0;
-                
-                console.log(`📊 التقدم: ${successCount}/${requiredReferrals}`);
-                
-                // ← معدّل: مقارنة مع العدد المخصص
-                if (successCount >= requiredReferrals && !competitionData.rewardClaimed) {
-                    const rewardPoints = competitionData.rewardPoints || 0;
+                if (competitionData.percentage >= 100 && !competitionData.rewardClaimed) {
+                    const rewardPoints = competitionDoc.data().rewardPoints || 0;
+                    
+                    if (rewardPoints <= 0) {
+                        console.warn('⚠️ لا توجد نقاط مكافأة لهذه المسابقة');
+                        return;
+                    }
+                    
+                    const currentBalance = userData.currentBalance || 0;
+                    const newBalance = currentBalance + rewardPoints;
+                    
+                    console.log(`💰 الرصيد الحالي: ${currentBalance}`);
+                    console.log(`🎁 نقاط المكافأة: ${rewardPoints}`);
+                    console.log(`✨ الرصيد الجديد: ${newBalance}`);
                     
                     await db.collection('users').doc(userDocId).update({
+                        currentBalance: newBalance,
                         [`competitions.${competitionId}.rewardClaimed`]: true,
-                        points: firebase.firestore.FieldValue.increment(rewardPoints)
+                        [`competitions.${competitionId}.rewardClaimedAt`]: new Date().toISOString()
                     });
                     
-                    console.log(`🎉 تم منح ${rewardPoints} نقطة للمستخدم`);
-                    
-                    // تحديث الواجهة
-                    loadGlobalChat();
+                    console.log(`✅ تم إضافة ${rewardPoints} نقطة للمستخدم!`);
+                    alert(`🎉 مبروك! لقد أكملت المسابقة وحصلت على ${rewardPoints} نقطة ذهبية!`);
                 }
                 
             } catch (error) {
-                console.error('❌ خطأ في checkAndAwardPoints:', error);
+                console.error('❌ خطأ في التحقق من الجائزة:', error);
             }
         }
         async function deleteFailedReferral(competitionId, referralIndex, event) {
@@ -2945,20 +2813,21 @@
         }
 
         // حفظ كود الإحالة في userData عند أول تحميل
-        // ✅ استبدل الكود الموجود بهذا
-        // ✅ عدّل هذا الجزء
         firebase.auth().onAuthStateChanged(async (user) => {
             if (user) {
-                await initializePermanentCompetitionsForNewUser(user.email);
+                const userDoc = await db.collection('users').doc(user.uid).get();
                 
-                loadUserNotifications();
-                listenToNotificationsUpdates();
-                
-                // ✅ استدعاء التحديثات الفورية
-                listenToChatUpdates();
-                updateChatBadge(); // تحديث فوري أولي
-                
-                loadGlobalChat();
+                if (userDoc.exists) {
+                    const userData = userDoc.data();
+                    
+                    // توليد كود إحالة إذا لم يكن موجوداً
+                    if (!userData.referralCode) {
+                        const referralCode = user.uid.substring(0, 8).toUpperCase();
+                        await db.collection('users').doc(user.uid).update({
+                            referralCode: referralCode
+                        });
+                    }
+                }
             }
         });
         
@@ -3044,7 +2913,23 @@
         }
         
         // تحديث شارة المسابقات
-        
+        function updateChatBadge() {
+            // حساب عدد الرسائل غير المقروءة من الإدارة
+            const readMessages = JSON.parse(localStorage.getItem('readMessages')) || [];
+            const unreadCount = globalMessages.filter(msg => 
+                msg.type === 'admin_message' && !readMessages.includes(msg.id)
+            ).length;
+            
+            const badge = document.getElementById('chatBadge');
+            if (badge) {
+                if (unreadCount > 0) {
+                    badge.textContent = unreadCount > 99 ? '99+' : String(unreadCount);
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
+            }
+        }
         // إضافة مستمع للتحديثات الفورية على الإشعارات
         function listenToNotificationsUpdates() {
             const user = firebase.auth().currentUser;
@@ -3087,3 +2972,15 @@
     </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
