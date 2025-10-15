@@ -1684,6 +1684,68 @@
                 badge.classList.add('hidden');
             }
         }
+        // ✅ دالة لإعادة حساب نسب الإكمال للمسابقات
+        async function recalculateCompetitionPercentages() {
+            const currentUser = firebase.auth().currentUser;
+            if (!currentUser) return;
+            
+            try {
+                const userSnapshot = await db.collection('users')
+                    .where('email', '==', currentUser.email)
+                    .limit(1)
+                    .get();
+                
+                if (userSnapshot.empty) return;
+                
+                const userDoc = userSnapshot.docs[0];
+                const userData = userDoc.data();
+                const competitions = userData.competitions || {};
+                
+                let needsUpdate = false;
+                const updates = {};
+                
+                for (const competitionId in competitions) {
+                    const competitionData = competitions[competitionId];
+                    
+                    // جلب requiredReferrals من المسابقة
+                    const competitionDoc = await db.collection('permanent_competitions').doc(competitionId).get();
+                    
+                    if (!competitionDoc.exists) continue;
+                    
+                    const requiredReferrals = competitionDoc.data().requiredReferrals || 10;
+                    const successfulRefs = competitionData.successfulReferrals || [];
+                    const successCount = successfulRefs.filter(r => r.status === 'success').length;
+                    
+                    const correctPercentage = Math.min(Math.round((successCount / requiredReferrals) * 100), 100);
+                    
+                    // التحقق من وجود فرق
+                    if (competitionData.percentage !== correctPercentage) {
+                        updates[`competitions.${competitionId}.percentage`] = correctPercentage;
+                        needsUpdate = true;
+                        console.log(`🔄 تصحيح نسبة المسابقة ${competitionId}: ${competitionData.percentage}% → ${correctPercentage}%`);
+                    }
+                }
+                
+                // تحديث Firestore إذا لزم الأمر
+                if (needsUpdate) {
+                    await db.collection('users').doc(userDoc.id).update(updates);
+                    console.log('✅ تم تصحيح النسب بنجاح');
+                }
+                
+            } catch (error) {
+                console.error('❌ خطأ في إعادة حساب النسب:', error);
+            }
+        }
+
+        // ✅ استدعاء الدالة عند تحميل الصفحة
+        firebase.auth().onAuthStateChanged((user) => {
+            if (user) {
+                recalculateCompetitionPercentages(); // ✅ إعادة حساب النسب
+                loadUserNotifications();
+                listenToNotificationsUpdates();
+                loadGlobalChat();
+            }
+        });
         
         // ============ مراقبة رسائل المحادثة العامة ============
         function listenToGlobalChat() {
