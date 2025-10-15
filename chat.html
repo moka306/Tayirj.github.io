@@ -2292,6 +2292,7 @@
         // توسيع/طي البطاقة
         // توسيع/طي البطاقة
         // توسيع/طي البطاقة
+        // دالة toggleCardExpansion كاملة بعد التعديل
         async function toggleCardExpansion(cardElement, message) {
             const isExpanded = cardElement.classList.contains('expanded');
             
@@ -2478,80 +2479,7 @@
             }
         }
 
-        
-        // إرسال رسالة من المستخدم
-        async function sendUserMessage(messageText) {
-            const userData = JSON.parse(localStorage.getItem('userData')) || {};
-            const userName = userData.firstName && userData.lastName 
-                ? `${userData.firstName} ${userData.lastName}` 
-                : 'مستخدم مرجان';
-            
-            const messageData = {
-                senderId: localStorage.getItem('userUID') || 'user123',
-                senderName: userName,
-                message: messageText,
-                timestamp: firebase.firestore.Timestamp.now(),
-                type: 'user_message'
-            };
-            
-            try {
-                await db.collection('global_chat').add(messageData);
-            } catch (error) {
-                console.error('Error sending message:', error);
-                alert('حدث خطأ أثناء إرسال الرسالة: ' + error.message);
-            }
-        }
-        
-        // تصفية المحادثات حسب النص
-        function filterConversations(searchTerm) {
-            const allConversations = document.querySelectorAll('.conversation-item');
-            
-            allConversations.forEach(conversation => {
-                const preview = conversation.querySelector('.conversation-preview').textContent;
-                if (preview.includes(searchTerm)) {
-                    conversation.style.display = 'flex';
-                } else {
-                    conversation.style.display = 'none';
-                }
-            });
-        }
-        // توليد رابط الإحالة
-        function generateReferralLink(competitionId, userReferralCode) {
-            // ✅ استخدام رابط كامل بدلاً من نسبي
-            const baseUrl = 'https://moka306.github.io/Tayirj.github.io/index.html';
-            return `${baseUrl}?ref=${userReferralCode}&competition=${competitionId}`;
-        }
-
-        // نسخ رابط الإحالة
-        function copyReferralLink(messageId, event) {
-            event.stopPropagation();
-            
-            const input = document.getElementById(`referralLink${messageId}`);
-            const referralLink = input.value;
-            
-            if (!referralLink || referralLink === 'جاري التحميل...') {
-                alert('الرابط غير جاهز');
-                return;
-            }
-            
-            // فتح واتساب مباشرة بدون رسالة نصية
-            const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(referralLink)}`;
-            window.open(whatsappUrl, '_blank');
-            
-            const btn = event.target.closest('.copy-link-btn');
-            const originalHTML = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-check"></i> تم المشاركة';
-            btn.classList.add('copied');
-            
-            setTimeout(() => {
-                btn.innerHTML = originalHTML;
-                btn.classList.remove('copied');
-            }, 2000);
-        }
-
-        // تحميل بيانات الإحالة
-        // تحميل بيانات الإحالة
-        // تحميل بيانات الإحالة
+        // دالة loadReferralData كاملة بعد التعديل
         async function loadReferralData(competitionId) {
             const currentUser = firebase.auth().currentUser;
             
@@ -2566,11 +2494,16 @@
             console.log('📌 currentUser.email:', currentUser.email);
             
             try {
-                // ✅ التحقق من وجود المسابقة أولاً
-                const competitionDoc = await db.collection(message.isPermanent ? 'permanent_competitions' : 'global_chat').doc(message.id).get();
+                // ✅ البحث في permanent_competitions أولاً
+                let competitionDoc = await db.collection('permanent_competitions').doc(competitionId).get();
+                
+                // ✅ إذا لم توجد، ابحث في global_chat
+                if (!competitionDoc.exists) {
+                    competitionDoc = await db.collection('global_chat').doc(competitionId).get();
+                }
                 
                 if (!competitionDoc.exists) {
-                    console.error('❌ المسابقة غير موجودة في global_chat:', competitionId);
+                    console.error('❌ المسابقة غير موجودة:', competitionId);
                     document.getElementById(`referralLink${competitionId}`).value = 'خطأ: المسابقة غير موجودة';
                     document.getElementById(`referralsList${competitionId}`).innerHTML = '<div class="no-referrals">المسابقة غير متاحة</div>';
                     return;
@@ -2652,6 +2585,82 @@
                 document.getElementById(`referralsList${competitionId}`).innerHTML = '<div class="no-referrals">حدث خطأ في التحميل</div>';
             }
         }
+
+        
+        // إرسال رسالة من المستخدم
+        async function sendUserMessage(messageText) {
+            const userData = JSON.parse(localStorage.getItem('userData')) || {};
+            const userName = userData.firstName && userData.lastName 
+                ? `${userData.firstName} ${userData.lastName}` 
+                : 'مستخدم مرجان';
+            
+            const messageData = {
+                senderId: localStorage.getItem('userUID') || 'user123',
+                senderName: userName,
+                message: messageText,
+                timestamp: firebase.firestore.Timestamp.now(),
+                type: 'user_message'
+            };
+            
+            try {
+                await db.collection('global_chat').add(messageData);
+            } catch (error) {
+                console.error('Error sending message:', error);
+                alert('حدث خطأ أثناء إرسال الرسالة: ' + error.message);
+            }
+        }
+        
+        // تصفية المحادثات حسب النص
+        function filterConversations(searchTerm) {
+            const allConversations = document.querySelectorAll('.conversation-item');
+            
+            allConversations.forEach(conversation => {
+                const preview = conversation.querySelector('.conversation-preview').textContent;
+                if (preview.includes(searchTerm)) {
+                    conversation.style.display = 'flex';
+                } else {
+                    conversation.style.display = 'none';
+                }
+            });
+        }
+        // توليد رابط الإحالة
+        function generateReferralLink(competitionId, userReferralCode) {
+            // ✅ استخدام رابط كامل بدلاً من نسبي
+            const baseUrl = 'https://moka306.github.io/Tayirj.github.io/index.html';
+            return `${baseUrl}?ref=${userReferralCode}&competition=${competitionId}`;
+        }
+
+        // نسخ رابط الإحالة
+        function copyReferralLink(messageId, event) {
+            event.stopPropagation();
+            
+            const input = document.getElementById(`referralLink${messageId}`);
+            const referralLink = input.value;
+            
+            if (!referralLink || referralLink === 'جاري التحميل...') {
+                alert('الرابط غير جاهز');
+                return;
+            }
+            
+            // فتح واتساب مباشرة بدون رسالة نصية
+            const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(referralLink)}`;
+            window.open(whatsappUrl, '_blank');
+            
+            const btn = event.target.closest('.copy-link-btn');
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-check"></i> تم المشاركة';
+            btn.classList.add('copied');
+            
+            setTimeout(() => {
+                btn.innerHTML = originalHTML;
+                btn.classList.remove('copied');
+            }, 2000);
+        }
+
+        // تحميل بيانات الإحالة
+        // تحميل بيانات الإحالة
+        // تحميل بيانات الإحالة
+       
 
         // عرض قائمة الإحالات الناجحة
         function displaySuccessfulReferrals(competitionId, referrals) {
@@ -2972,6 +2981,7 @@
     </script>
 </body>
 </html>
+
 
 
 
