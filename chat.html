@@ -2754,12 +2754,20 @@
                     console.log(`💰 الرصيد الحالي: ${currentBalance}`);
                     console.log(`🎁 نقاط المكافأة: ${rewardPoints}`);
                     console.log(`✨ الرصيد الجديد: ${newBalance}`);
-                    
                     await db.collection('users').doc(userDocId).update({
-                        currentBalance: newBalance,
+                    currentBalance: newBalance,
                         [`competitions.${competitionId}.rewardClaimed`]: true,
-                        [`competitions.${competitionId}.rewardClaimedAt`]: new Date().toISOString()
+                        [`competitions.${competitionId}.rewardClaimedAt`]: new Date().toISOString(),
+                        [`competitions.${competitionId}.percentage`]: 0,  // ✅ إعادة النسبة للصفر
+                        [`competitions.${competitionId}.successfulReferrals`]: []  // ✅ مسح قائمة الإحالات
                     });
+
+                    console.log(`🔄 تم إعادة تعيين نسبة الاكتمال للصفر للبدء من جديد!`);
+
+                    // ✅ إعادة تحميل البطاقة لإظهار النسبة الجديدة
+                    setTimeout(() => {
+                        location.reload(); // أو يمكن تحديث العرض مباشرة بدون إعادة تحميل
+                    }, 2000);
                     
                     console.log(`✅ تم إضافة ${rewardPoints} نقطة للمستخدم!`);
                     alert(`🎉 مبروك! لقد أكملت المسابقة وحصلت على ${rewardPoints} نقطة ذهبية!`);
