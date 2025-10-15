@@ -1680,25 +1680,6 @@
                 badge.classList.add('hidden');
             }
         }
-        // ✅ دالة مساعدة لحساب نسبة الاكتمال بناءً على عدد الإحالات المطلوبة والناجحة
-        function computeCompletionPercentage(message, userCompetitionData) {
-            // أولاً نحاول الحصول على عدد الإحالات الناجحة من userCompetitionData (أقرب مصدر)
-            let successfulRefs = [];
-            if (userCompetitionData && userCompetitionData.successfulReferrals) {
-                successfulRefs = userCompetitionData.successfulReferrals;
-            } else if (message.successfulReferrals) {
-                successfulRefs = message.successfulReferrals;
-            }
-            const successCount = (successfulRefs || []).filter(r => r && r.status === 'success').length;
-
-            // نقرأ requiredReferrals من المستند، مع محاولة دعم أسماء مختلفة أو fallback
-            const totalRequired = Number(message.requiredReferrals || message.required_referrals || 10);
-
-            if (!totalRequired || totalRequired <= 0) return 0;
-            const pct = Math.round((successCount / totalRequired) * 100);
-            return Math.min(Math.max(pct, 0), 100);
-        }
-
         
         // ============ مراقبة رسائل المحادثة العامة ============
         function listenToGlobalChat() {
@@ -1747,7 +1728,7 @@
                 
                 const timestamp = message.timestamp?.toDate ? message.timestamp.toDate() : new Date(message.timestamp);
                 const time = formatTime(timestamp);
-                const completionPercentage = computeCompletionPercentage(message, /* optional userCompetitionData */);
+                const completionPercentage = message.completionPercentage || 75;
                 const strokeDashoffset = 145 - (145 * completionPercentage / 100);
                 
                 // تحديد مصدر الصورة
@@ -1863,7 +1844,7 @@
         function createHologramMessage(message) {
             const timestamp = message.timestamp?.toDate ? message.timestamp.toDate() : new Date(message.timestamp);
             const time = formatTime(timestamp);
-            const completionPercentage = computeCompletionPercentage(message, /* optional userCompetitionData */);
+            const completionPercentage = message.completionPercentage || 75;
             const strokeDashoffset = 145 - (145 * completionPercentage / 100);
             
             // تحديد مصدر الصورة
@@ -2200,14 +2181,18 @@
                         let displayPercentage = 0;
                         if (userData && userData.competitions && userData.competitions[message.id]) {
                             const competitionData = userData.competitions[message.id];
-                            if (competitionData.percentage !== undefined) {
-                                displayPercentage = competitionData.percentage;
-                            } else {
-                                const successfulRefs = competitionData.successfulReferrals || [];
-                                const successCount = successfulRefs.filter(r => r.status === 'success').length;
-                                const totalRequired = message.requiredReferrals || 10;
-                                displayPercentage = Math.round((successCount / totalRequired) * 100);
-                            }
+                            
+                            // ✅ الحساب الصحيح لنسبة الإكتمال
+                            const successfulRefs = competitionData.successfulReferrals || [];
+                            const successCount = successfulRefs.filter(r => r.status === 'success').length;
+                            
+                            // ✅ الحصول على عدد الإحالات المطلوبة من بيانات المسابقة
+                            const totalRequired = message.requiredReferrals ;
+                            
+                            // ✅ حساب النسبة بشكل صحيح مع تحديد حد أقصى 100%
+                            displayPercentage = Math.min(Math.round((successCount / totalRequired) * 100), 100);
+                            
+                            console.log(`📊 حساب النسبة: ${successCount} / ${totalRequired} = ${displayPercentage}%`);
                         }
                         
                         const completionPercentage = displayPercentage;
