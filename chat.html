@@ -2712,11 +2712,10 @@
             
             try {
                 // ✅ التحقق من وجود المسابقة أولاً
-                const competitionDoc = await db.collection(message.isPermanent ? 'permanent_competitions' : 'global_chat').doc(message.id).get();
-                
+                const competitionDoc = await db.collection('permanent_competitions').doc(competitionId).get();
+                // إذا لم توجد في permanent_competitions، ابحث في global_chat
                 if (!competitionDoc.exists) {
-                    console.error('❌ المسابقة غير موجودة في global_chat:', competitionId);
-                    return;
+                    competitionDoc = await db.collection('global_chat').doc(competitionId).get();
                 }
                 
                 console.log('✅ المسابقة موجودة في checkAndAwardPoints');
@@ -2981,7 +2980,6 @@
     </script>
 </body>
 </html>
-
 
 
 
