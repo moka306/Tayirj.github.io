@@ -2617,69 +2617,65 @@
             const isLoggedIn = localStorage.getItem('isLoggedIn');
             const userEmail = localStorage.getItem('userEmail');
             
-            if (!user && isLoggedIn === 'true' && userEmail) {
-                localStorage.removeItem('isLoggedIn');
-                localStorage.removeItem('userEmail');
+            // ✅ تحقق أولاً إذا كان المستخدم مسجل دخول في Firebase
+            if (!user) {
+                // إذا لم يكن هناك مستخدم Firebase، نظف localStorage وحوّل للصفحة الرئيسية
+                if (isLoggedIn === 'true') {
+                    localStorage.removeItem('isLoggedIn');
+                    localStorage.removeItem('userEmail');
+                }
                 window.location.href = 'index.html';
                 return;
             }
             
-            if (user) {
-                try {
-                    // ✅ البحث بالإيميل للحصول على ID المستند الصحيح
-                    const usersQuery = await db.collection("users")
-                        .where("email", "==", user.email)
-                        .limit(1)
-                        .get();
-                        
-                    if (!usersQuery.empty) {
-                        const docSnap = usersQuery.docs[0];
-                        const userData = docSnap.data();
-                        const userDocId = docSnap.id; // ✅ احفظ ID المستند
-                        
-                        // ✅ حفظ userDocId في localStorage للاستخدام لاحقاً
-                        localStorage.setItem('userDocId', userDocId);
-                        
-                        // عرض البيانات الحقيقية
-                        const fullName = `${userData.firstName || ""} ${userData.lastName || ""}`.trim();
-                        document.getElementById("userName").textContent = fullName || "مستخدم";
-                        document.getElementById("userPhone").textContent = userData.phone || "لا يوجد رقم";
-                        document.getElementById("currentBalance").textContent = (userData.currentBalance ?? 50) + " نقطة";
-                        
-                        // ✅ إضافة مستمع للتحديثات الفورية على الرصيد
-                        db.collection('users')
-                            .doc(userDocId) // ✅ استخدم userDocId الصحيح
-                            .onSnapshot(snapshot => {
-                                if (snapshot.exists) {
-                                    const updatedData = snapshot.data();
-                                    const newBalance = updatedData.currentBalance ?? 50;
-                                    document.getElementById("currentBalance").textContent = newBalance + " نقطة";
-                                    
-                                    console.log('✅ تم تحديث الرصيد إلى:', newBalance);
-                                }
-                            }, error => {
-                                console.error('خطأ في مراقبة التحديثات:', error);
-                            });
-                        
-                        // ✅ بدء مراقبة الإشعارات والرسائل
-                        listenToGlobalChat();
-                        loadUserNotifications();
-                        listenToNotificationsUpdates();
-                        
-                        // ✅ تحديث المخطط بعد تحميل كل شيء
-                        setTimeout(() => {
-                            if (adsChart) {
-                                updateAdsChart();
+            // ✅ المستخدم موجود، نكمل باقي الكود
+            try {
+                const usersQuery = await db.collection("users")
+                    .where("email", "==", user.email)
+                    .limit(1)
+                    .get();
+                    
+                if (!usersQuery.empty) {
+                    const docSnap = usersQuery.docs[0];
+                    const userData = docSnap.data();
+                    const userDocId = docSnap.id;
+                    
+                    localStorage.setItem('userDocId', userDocId);
+                    
+                    // عرض البيانات
+                    const fullName = `${userData.firstName || ""} ${userData.lastName || ""}`.trim();
+                    document.getElementById("userName").textContent = fullName || "مستخدم";
+                    document.getElementById("userPhone").textContent = userData.phone || "لا يوجد رقم";
+                    document.getElementById("currentBalance").textContent = (userData.currentBalance ?? 50) + " نقطة";
+                    
+                    // ✅ مراقبة التحديثات
+                    db.collection('users')
+                        .doc(userDocId)
+                        .onSnapshot(snapshot => {
+                            if (snapshot.exists) {
+                                const updatedData = snapshot.data();
+                                const newBalance = updatedData.currentBalance ?? 50;
+                                document.getElementById("currentBalance").textContent = newBalance + " نقطة";
                             }
-                        }, 500);
-                    } else {
-                        await createUserDocument(user);
-                    }
-                } catch (error) {
-                    console.error("خطأ في جلب بيانات المستخدم:", error);
-                    window.location.href = 'index.html';
+                        });
+                    
+                    // ✅ بدء مراقبة الإشعارات والرسائل
+                    listenToGlobalChat();
+                    loadUserNotifications();
+                    listenToNotificationsUpdates();
+                    await updateCompetitionsBadge(); // ✅ أضف هذا السطر
+                    
+                    // تحديث المخطط
+                    setTimeout(() => {
+                        if (adsChart) {
+                            updateAdsChart();
+                        }
+                    }, 500);
+                } else {
+                    await createUserDocument(user);
                 }
-            } else {
+            } catch (error) {
+                console.error("خطأ في جلب بيانات المستخدم:", error);
                 window.location.href = 'index.html';
             }
         });
@@ -3143,15 +3139,7 @@
                 }
             }
         });
-        firebase.auth().onAuthStateChanged(async (user) => {
-            if (user) {
-                console.log("✅ المستخدم مسجل الدخول:", user.email);
-
-                // جلب الرسائل غير المقروءة للمسابقات والدردشة
-                await updateCompetitionsBadge();
-                listenToGlobalChat();
-            }
-        });
+        
 
         // ✅ دالة مخصصة لتحديث الشارة في الصفحة الرئيسية
         async function updateCompetitionsBadge() {
