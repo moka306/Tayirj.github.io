@@ -2362,23 +2362,35 @@
                 }
                 
                 // الحصول على نسبة الاكتمال من بيانات المستخدم
+                // الحصول على نسبة الاكتمال من بيانات المستخدم - محسوبة حديثاً
                 let displayPercentage = 0;
-                let hasPublishedAd = false; // ✅ متغير جديد للتحقق من نشر إعلان
-                
                 if (currentUser) {
                     try {
                         const userDoc = await db.collection('users').doc(currentUser.uid).get();
                         if (userDoc.exists) {
                             const userData = userDoc.data();
-                            displayPercentage = userData.competitions?.[message.id]?.percentage || 0;
-                            hasPublishedAd = userData.hasPublishedAd || false; // ✅ التحقق من نشر إعلان
-                            console.log('✅ نسبة الاكتمال:', displayPercentage);
-                            console.log('✅ هل نشر إعلان:', hasPublishedAd);
+                            hasPublishedAd = userData.hasPublishedAd || false;
+                            
+                            // ✅ إعادة حساب النسبة بناءً على الإحالات الناجحة الحالية
+                            const competitionData = userData.competitions?.[message.id];
+                            if (competitionData) {
+                                const successfulRefs = competitionData.successfulReferrals || [];
+                                const successCount = successfulRefs.filter(r => r.status === 'success').length;
+                                const totalRequired = message.requiredReferrals || 10;
+                                displayPercentage = Math.min(Math.round((successCount / totalRequired) * 100), 100);
+                                
+                                console.log('✅ إعادة حساب النسبة:', {
+                                    successCount,
+                                    totalRequired,
+                                    displayPercentage
+                                });
+                            }
                         }
                     } catch (error) {
                         console.error('خطأ في جلب نسبة الاكتمال:', error);
                     }
                 }
+                
                 
                 const completionPercentage = displayPercentage;
                 const strokeDashoffset = 145 - (145 * completionPercentage / 100);
