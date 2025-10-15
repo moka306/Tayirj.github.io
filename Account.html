@@ -3149,12 +3149,17 @@
 
                 // جلب الرسائل غير المقروءة للمسابقات والدردشة
                 await updateCompetitionsBadge();
+                listenToGlobalChat();
             }
         });
 
         // ✅ دالة مخصصة لتحديث الشارة في الصفحة الرئيسية
         async function updateCompetitionsBadge() {
-            const badge = document.getElementById('chatBadge');
+            const badge = document.getElementById('competitionsBadge') || document.getElementById('chatBadge');
+            if (!badge) {
+            console.warn('updateCompetitionsBadge: badge element not found (tried competitionsBadge and chatBadge)');
+            return;
+            }
             if (!badge) return;
 
             const user = firebase.auth().currentUser;
