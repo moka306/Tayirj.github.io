@@ -2613,6 +2613,33 @@
                 console.error("خطأ في updateAdsChart:", error);
             }
         }
+         // ✅ دالة مخصصة لتحديث الشارة في الصفحة الرئيسية
+        async function updateCompetitionsBadge() {
+            console.log('updateCompetitionsBadge started');
+            const badge = document.getElementById('competitionsBadge');
+            if (!badge) return;
+
+            // جلب قائمة الرسائل المقروءة أو مصفوفة فارغة
+            const readMessages = JSON.parse(localStorage.getItem('readMessages') || '[]');
+            console.log('readMessages found:', readMessages);
+
+            const snapshot = await db.collection('global_chat').orderBy('timestamp', 'desc').get();
+            let unreadCount = 0;
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                if (data.type === 'admin_message' && !readMessages.includes(doc.id)) {
+                unreadCount++;
+                }
+            });
+
+            console.log('unreadCount:', unreadCount);
+            if (unreadCount > 0) {
+                badge.textContent = unreadCount > 99 ? '99+' : String(unreadCount);
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
         auth.onAuthStateChanged(async (user) => {
             const isLoggedIn = localStorage.getItem('isLoggedIn');
             const userEmail = localStorage.getItem('userEmail');
@@ -3141,33 +3168,7 @@
         });
         
 
-        // ✅ دالة مخصصة لتحديث الشارة في الصفحة الرئيسية
-        async function updateCompetitionsBadge() {
-            console.log('updateCompetitionsBadge started');
-            const badge = document.getElementById('competitionsBadge');
-            if (!badge) return;
-
-            // جلب قائمة الرسائل المقروءة أو مصفوفة فارغة
-            const readMessages = JSON.parse(localStorage.getItem('readMessages') || '[]');
-            console.log('readMessages found:', readMessages);
-
-            const snapshot = await db.collection('global_chat').orderBy('timestamp', 'desc').get();
-            let unreadCount = 0;
-            snapshot.forEach(doc => {
-                const data = doc.data();
-                if (data.type === 'admin_message' && !readMessages.includes(doc.id)) {
-                unreadCount++;
-                }
-            });
-
-            console.log('unreadCount:', unreadCount);
-            if (unreadCount > 0) {
-                badge.textContent = unreadCount > 99 ? '99+' : String(unreadCount);
-                badge.classList.remove('hidden');
-            } else {
-                badge.classList.add('hidden');
-            }
-            }
+       
 
         // ============ إعداد مستمعي الأحداث ============
 
