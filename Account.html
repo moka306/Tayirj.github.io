@@ -2424,11 +2424,7 @@
         }
         firebase.auth().onAuthStateChanged(async (user) => {
             if (user) {
-                console.log("✅ المستخدم مسجل الدخول:", user.email);
-                // بدء مراقبة التحديثات القادمة من global_chat (كما في chat.html)
                 listenToGlobalChat();
-
-                // تحديث شارة المسابقات عند تسجيل الدخول
                 await updateCompetitionsBadge();
             }
         });
@@ -3245,7 +3241,7 @@
             }
         }
         async function updateCompetitionsBadge() {
-            const badge = document.getElementById('chatBadge');
+            const badge = document.getElementById('competitionsBadge');
             if (!badge) return;
 
             const user = firebase.auth().currentUser;
