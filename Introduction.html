@@ -1873,7 +1873,7 @@
         }
 
         function listenToGlobalChat() {
-            db.collection('global_chat')
+            db.collection('permanent_competitions')
                 .orderBy('timestamp', 'desc')
                 .onSnapshot(snapshot => {
                     globalMessages = [];
@@ -2680,6 +2680,65 @@
                 pagination.appendChild(pageButton);
             }
         }
+        firebase.auth().onAuthStateChanged(async (user) => {
+            if (user) {
+                console.log("✅ المستخدم مسجل الدخول:", user.email);
+
+                // جلب الرسائل غير المقروءة للمسابقات والدردشة
+                await updateCompetitionsBadge();
+            }
+        });
+
+        // ✅ دالة مخصصة لتحديث الشارة في الصفحة الرئيسية
+        async function updateCompetitionsBadge() {
+            const badge = document.getElementById('chatBadge');
+            if (!badge) return;
+
+            const user = firebase.auth().currentUser;
+            if (!user) {
+                badge.classList.add('hidden');
+                return;
+            }
+
+            try {
+                const readMessages = JSON.parse(localStorage.getItem('readMessages')) || [];
+                let unreadCount = 0;
+
+                // 🏆 جلب المسابقات غير المقروءة
+                const competitionsSnapshot = await db.collection('permanent_competitions').get();
+                competitionsSnapshot.forEach(doc => {
+                    if (!readMessages.includes(doc.id)) unreadCount++;
+                });
+
+                // 💬 جلب رسائل المستخدم الخاصة
+                const userSnapshot = await db.collection('users')
+                    .where('email', '==', user.email)
+                    .limit(1)
+                    .get();
+
+                if (!userSnapshot.empty) {
+                    const userData = userSnapshot.docs[0].data();
+                    const chatMessages = userData.chatMessages || [];
+
+                    chatMessages.forEach(msg => {
+                        if (msg.type === 'admin_message' && !readMessages.includes(msg.id)) unreadCount++;
+                    });
+                }
+
+                // ✅ تحديث الشارة في الشريط السفلي
+                if (unreadCount > 0) {
+                    badge.textContent = unreadCount > 99 ? '99+' : String(unreadCount);
+                    badge.classList.remove('hidden');
+                    badge.style.display = 'flex';
+                } else {
+                    badge.classList.add('hidden');
+                    badge.style.display = 'none';
+                }
+
+            } catch (error) {
+                console.error("❌ خطأ في تحديث شارة المسابقات:", error);
+            }
+        }
         
         // تفاعل الشريط السفلي
         document.querySelectorAll('.nav-item').forEach(item => {
@@ -2740,4 +2799,5 @@
         });
     </script>
 </body>
+
 </html>
