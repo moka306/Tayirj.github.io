@@ -2962,27 +2962,7 @@
                     }
                 });
         }
-        // ✅ سكريبت لتحديث المستخدمين الحاليين (تشغيل مرة واحدة فقط)
-        async function updateExistingUsersCodes() {
-            const usersSnapshot = await db.collection('users').get();
-            
-            for (const doc of usersSnapshot.docs) {
-                const userData = doc.data();
-                const newCode = `${doc.id.substring(0, 6)}-${Date.now().toString(36).toUpperCase()}`;
-                
-                await db.collection('users').doc(doc.id).update({
-                    referralCode: newCode
-                });
-                
-                // انتظار قليل لتجنب التحميل الزائد
-                await new Promise(resolve => setTimeout(resolve, 100));
-            }
-            
-            console.log('✅ تم تحديث جميع أكواد الإحالة');
-        }
-
-        // استدعاء الدالة مرة واحدة فقط (يمكن حذفها بعد التنفيذ)
-        // updateExistingUsersCodes();
+        
         
         // تفاعل الشريط السفلي
         document.querySelectorAll('.nav-item').forEach(item => {
