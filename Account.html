@@ -2422,6 +2422,14 @@
                     updateNotificationsBadge();
                 });
         }
+        firebase.auth().onAuthStateChanged(async (user) => {
+            if (user) {
+                console.log("✅ المستخدم مسجل الدخول:", user.email);
+
+                // جلب الرسائل غير المقروءة للمسابقات والدردشة
+                await updateCompetitionsBadge();
+            }
+        });
 
         function updateNotificationsBadge() {
             const unreadCount = userNotifications.filter(notification => !notification.read).length;
@@ -2614,32 +2622,7 @@
             }
         }
          // ✅ دالة مخصصة لتحديث الشارة في الصفحة الرئيسية
-        async function updateCompetitionsBadge() {
-            console.log('updateCompetitionsBadge started');
-            const badge = document.getElementById('competitionsBadge');
-            if (!badge) return;
-
-            // جلب قائمة الرسائل المقروءة أو مصفوفة فارغة
-            const readMessages = JSON.parse(localStorage.getItem('readMessages') || '[]');
-            console.log('readMessages found:', readMessages);
-
-            const snapshot = await db.collection('global_chat').orderBy('timestamp', 'desc').get();
-            let unreadCount = 0;
-            snapshot.forEach(doc => {
-                const data = doc.data();
-                if (data.type === 'admin_message' && !readMessages.includes(doc.id)) {
-                unreadCount++;
-                }
-            });
-
-            console.log('unreadCount:', unreadCount);
-            if (unreadCount > 0) {
-                badge.textContent = unreadCount > 99 ? '99+' : String(unreadCount);
-                badge.classList.remove('hidden');
-            } else {
-                badge.classList.add('hidden');
-            }
-        }
+        
         auth.onAuthStateChanged(async (user) => {
             const isLoggedIn = localStorage.getItem('isLoggedIn');
             const userEmail = localStorage.getItem('userEmail');
@@ -3257,6 +3240,55 @@
                 document.getElementById("currentBalance").textContent = "50 نقطة";
             } catch (error) {
                 console.error("خطأ في إنشاء مستند المستخدم:", error);
+            }
+        }
+        async function updateCompetitionsBadge() {
+            const badge = document.getElementById('chatBadge');
+            if (!badge) return;
+
+            const user = firebase.auth().currentUser;
+            if (!user) {
+                badge.classList.add('hidden');
+                return;
+            }
+
+            try {
+                const readMessages = JSON.parse(localStorage.getItem('readMessages')) || [];
+                let unreadCount = 0;
+
+                // 🏆 جلب المسابقات غير المقروءة
+                const competitionsSnapshot = await db.collection('permanent_competitions').get();
+                competitionsSnapshot.forEach(doc => {
+                    if (!readMessages.includes(doc.id)) unreadCount++;
+                });
+
+                // 💬 جلب رسائل المستخدم الخاصة
+                const userSnapshot = await db.collection('users')
+                    .where('email', '==', user.email)
+                    .limit(1)
+                    .get();
+
+                if (!userSnapshot.empty) {
+                    const userData = userSnapshot.docs[0].data();
+                    const chatMessages = userData.chatMessages || [];
+
+                    chatMessages.forEach(msg => {
+                        if (msg.type === 'admin_message' && !readMessages.includes(msg.id)) unreadCount++;
+                    });
+                }
+
+                // ✅ تحديث الشارة في الشريط السفلي
+                if (unreadCount > 0) {
+                    badge.textContent = unreadCount > 99 ? '99+' : String(unreadCount);
+                    badge.classList.remove('hidden');
+                    badge.style.display = 'flex';
+                } else {
+                    badge.classList.add('hidden');
+                    badge.style.display = 'none';
+                }
+
+            } catch (error) {
+                console.error("❌ خطأ في تحديث شارة المسابقات:", error);
             }
         }
     </script>
