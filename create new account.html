@@ -792,11 +792,13 @@
             }
             
             // التحقق من رقم الهاتف
+            // التحقق من رقم الهاتف
             const phone = document.getElementById('phone');
             const phoneError = document.getElementById('phoneError');
-            const phoneRegex = /^(\+?966|0)?5[0-9]{8}$/;
-            if (!phoneRegex.test(phone.value)) {
+            // ✅ التحقق فقط من أن الحقل غير فارغ
+            if (!phone.value.trim()) {
                 phoneError.style.display = 'block';
+                phoneError.textContent = 'رقم الهاتف مطلوب';
                 isValid = false;
             } else {
                 phoneError.style.display = 'none';
@@ -1241,3 +1243,4 @@
 
 </body>
 </html>
+
