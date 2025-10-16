@@ -1691,6 +1691,26 @@
         const db = firebase.firestore();
         let globalChatMessages = [];
         let cachedCompetitions = {};
+        function calculateCompletionPercentage(messageId, userData) {
+            if (!userData || !userData.competitions || !userData.competitions[messageId]) {
+                return 0;
+            }
+            
+            const competitionData = userData.competitions[messageId];
+            const successfulRefs = competitionData.successfulReferrals || [];
+            const successCount = successfulRefs.filter(r => r.status === 'success').length;
+            
+            // ✅ الحصول على عدد الإحالات المطلوبة من cachedCompetitions
+            const competition = cachedCompetitions[messageId];
+            const totalRequired = competition?.requiredReferrals || 10; // قيمة افتراضية 10
+            
+            // ✅ حساب النسبة مع تحديد حد أقصى 100%
+            const percentage = Math.min(Math.round((successCount / totalRequired) * 100), 100);
+            
+            console.log(`📊 حساب النسبة للمسابقة ${messageId}: ${successCount} / ${totalRequired} = ${percentage}%`);
+            
+            return percentage;
+        }
         function updateNavBadge(type, notifications) {
             const id = type === 'notifications' ? 'notificationsBadge' : null;
             if (!id) return;
@@ -2207,22 +2227,9 @@
                             '<div class="conversation-unread"></div>' : '';
                         
                         let displayPercentage = 0;
-                        if (userData && userData.competitions && userData.competitions[message.id]) {
-                            const competitionData = userData.competitions[message.id];
-                            
-                            // ✅ الحساب الصحيح لنسبة الإكتمال
-                            const successfulRefs = competitionData.successfulReferrals || [];
-                            const successCount = successfulRefs.filter(r => r.status === 'success').length;
-                            
-                            // ✅ الحصول على عدد الإحالات المطلوبة من بيانات المسابقة
-                            const totalRequired = message.requiredReferrals ;
-                            
-                            // ✅ حساب النسبة بشكل صحيح مع تحديد حد أقصى 100%
-                            displayPercentage = Math.min(Math.round((successCount / totalRequired) * 100), 100);
-                            
-                            console.log(`📊 حساب النسبة: ${successCount} / ${totalRequired} = ${displayPercentage}%`);
+                        if (userData) {
+                            displayPercentage = calculateCompletionPercentage(message.id, userData);
                         }
-                        
                         const completionPercentage = displayPercentage;
                         const strokeDashoffset = 145 - (145 * completionPercentage / 100);
 
@@ -2392,22 +2399,20 @@
                 // الحصول على نسبة الاكتمال من بيانات المستخدم
                 let displayPercentage = 0;
                 let hasPublishedAd = false; // ✅ متغير جديد للتحقق من نشر إعلان
-                
                 if (currentUser) {
                     try {
                         const userDoc = await db.collection('users').doc(currentUser.uid).get();
                         if (userDoc.exists) {
                             const userData = userDoc.data();
-                            displayPercentage = userData.competitions?.[message.id]?.percentage || 0;
-                            hasPublishedAd = userData.hasPublishedAd || false; // ✅ التحقق من نشر إعلان
+                            displayPercentage = calculateCompletionPercentage(message.id, userData);
+                            hasPublishedAd = userData.hasPublishedAd || false;
                             console.log('✅ نسبة الاكتمال:', displayPercentage);
                             console.log('✅ هل نشر إعلان:', hasPublishedAd);
                         }
                     } catch (error) {
                         console.error('خطأ في جلب نسبة الاكتمال:', error);
                     }
-                }
-                
+                } 
                 const completionPercentage = displayPercentage;
                 const strokeDashoffset = 145 - (145 * completionPercentage / 100);
                 
