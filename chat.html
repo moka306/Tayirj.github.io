@@ -2627,7 +2627,7 @@
             const baseUrl = 'https://moka306.github.io/Tayirj.github.io/index.html';
             // ✅ إضافة timestamp لضمان التفرد
             const uniqueId = Date.now();
-            return `${baseUrl}?ref=${userReferralCode}&competition=${competitionId}&uid=${uniqueId}`;
+            return `${baseUrl}?ref=${userReferralCode}&competition=${competitionId}`;
         }
 
         // نسخ رابط الإحالة
@@ -2641,8 +2641,7 @@
                 alert('الرابط غير جاهز');
                 return;
             }
-            
-            // فتح واتساب مباشرة بدون رسالة نصية
+            // ✅ الرابط بدون uid - جاهز للمشاركة
             const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(referralLink)}`;
             window.open(whatsappUrl, '_blank');
             
