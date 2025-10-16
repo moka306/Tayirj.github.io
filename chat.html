@@ -1691,25 +1691,44 @@
         const db = firebase.firestore();
         let globalChatMessages = [];
         let cachedCompetitions = {};
-        function calculateCompletionPercentage(messageId, userData) {
-            if (!userData || !userData.competitions || !userData.competitions[messageId]) {
+        // ✅ تعديل الدالة - جعلها async
+        // ✅ تعديل الدالة - جعلها async
+        async function calculateCompletionPercentage(messageId, userData) {
+            try {
+                if (!userData || !userData.competitions || !userData.competitions[messageId]) {
+                    return 0;
+                }
+                
+                const competitionData = userData.competitions[messageId];
+                const successfulRefs = competitionData.successfulReferrals || [];
+                const successCount = successfulRefs.filter(r => r.status === 'success').length;
+                
+                // ✅ جلب بيانات المسابقة من Firestore (غير متزامن)
+                let competitionDoc = await db.collection('permanent_competitions').doc(messageId).get();
+                let totalRequired = 10; // قيمة افتراضية
+
+                if (competitionDoc.exists) {
+                    const competition = competitionDoc.data();
+                    totalRequired = competition.requiredReferrals || 10;
+                } else {
+                    // ✅ إذا لم توجد في permanent_competitions، ابحث في global_chat
+                    competitionDoc = await db.collection('global_chat').doc(messageId).get();
+                    if (competitionDoc.exists) {
+                        const competition = competitionDoc.data();
+                        totalRequired = competition.requiredReferrals || 10;
+                    }
+                }
+                
+                // ✅ حساب النسبة مع تحديد حد أقصى 100%
+                const percentage = Math.min(Math.round((successCount / totalRequired) * 100), 100);
+                
+                console.log(`📊 حساب النسبة للمسابقة ${messageId}: ${successCount} / ${totalRequired} = ${percentage}%`);
+                
+                return percentage;
+            } catch (error) {
+                console.error('❌ خطأ في حساب النسبة:', error);
                 return 0;
             }
-            
-            const competitionData = userData.competitions[messageId];
-            const successfulRefs = competitionData.successfulReferrals || [];
-            const successCount = successfulRefs.filter(r => r.status === 'success').length;
-            
-            // ✅ الحصول على عدد الإحالات المطلوبة من cachedCompetitions
-            const competition = cachedCompetitions[messageId];
-            const totalRequired = competition?.requiredReferrals || 10; // قيمة افتراضية 10
-            
-            // ✅ حساب النسبة مع تحديد حد أقصى 100%
-            const percentage = Math.min(Math.round((successCount / totalRequired) * 100), 100);
-            
-            console.log(`📊 حساب النسبة للمسابقة ${messageId}: ${successCount} / ${totalRequired} = ${percentage}%`);
-            
-            return percentage;
         }
         function updateNavBadge(type, notifications) {
             const id = type === 'notifications' ? 'notificationsBadge' : null;
@@ -2097,7 +2116,7 @@
         
         // تحميل المحادثات العامة من Firebase
         // استبدل دالة loadGlobalChat() الموجودة بهذه النسخة المحدثة
-        function loadGlobalChat() {
+        async function loadGlobalChat() {
             conversationsList.innerHTML = `
                 <div class="loading-spinner">
                     <div class="spinner"></div>
@@ -2108,211 +2127,212 @@
             
             const currentUser = firebase.auth().currentUser;
             
-            // ✅ جلب الرسائل من permanent_competitions
-            const permanentCompetitionsPromise = db.collection('permanent_competitions')
-                .orderBy('timestamp', 'desc')
-                .get();
-            
-            // ✅ جلب الرسائل الخاصة بالمستخدم (إن وُجد)
-            let userMessagesPromise = Promise.resolve({ empty: true, docs: [] });
-            
-            if (currentUser) {
-                userMessagesPromise = db.collection('users')
-                    .where('email', '==', currentUser.email)
-                    .limit(1)
-                    .get()
-                    .then(snapshot => {
-                        if (!snapshot.empty) {
-                            const userData = snapshot.docs[0].data();
-                            const chatMessages = userData.chatMessages || [];
-                            
-                            // تحويل chatMessages إلى صيغة مشابهة لـ snapshot
-                            return {
-                                empty: chatMessages.length === 0,
-                                docs: chatMessages.map(msg => ({
-                                    id: msg.id,
-                                    data: () => msg
-                                }))
-                            };
-                        }
-                        return { empty: true, docs: [] };
-                    })
-                    .catch(error => {
-                        console.error('خطأ في جلب رسائل المستخدم:', error);
-                        return { empty: true, docs: [] };
-                    });
-            }
-            
-            // ✅ دمج النتائج من المصدرين
-            Promise.all([permanentCompetitionsPromise, userMessagesPromise])
-                .then(async ([permanentSnapshot, userMessages]) => {
-                    conversationsList.innerHTML = '';
-                    globalMessages = [];
-                    unreadMessages = [];
-                    
-                    // معالجة permanent_competitions
-                    permanentSnapshot.forEach(doc => {
-                        const docData = doc.data();
-                        const message = {
-                            ...docData,
-                            id: doc.id,
-                            isPermanent: true
-                        };
-                        globalMessages.push(message);
-                    });
-                    
-                    // معالجة chatMessages للمستخدم
-                    if (!userMessages.empty) {
-                        userMessages.docs.forEach(doc => {
-                            const message = doc.data();
-                            globalMessages.push({
-                                ...message,
-                                isPermanent: false
-                            });
-                        });
-                    }
-                    
-                    // ترتيب الرسائل حسب التاريخ
-                    globalMessages.sort((a, b) => {
-                        const timeA = a.timestamp?.toDate ? a.timestamp.toDate() : new Date(a.timestamp);
-                        const timeB = b.timestamp?.toDate ? b.timestamp.toDate() : new Date(b.timestamp);
-                        return timeB - timeA;
-                    });
-                    
-                    if (globalMessages.length === 0) {
-                        conversationsList.innerHTML = `
-                            <div style="text-align: center; padding: 20px; color: #666;">
-                                <i class="fas fa-comments" style="font-size: 3rem; margin-bottom: 15px; color: #ccc;"></i>
-                                <p>لا توجد رسائل عامة بعد</p>
-                                <p style="font-size: 0.9rem; color: #888;">سيظهر هنا الرسائل العامة من الإدارة</p>
-                            </div>
-                        `;
-                        updateChatBadge();
-                        return;
-                    }
-                    
-                    // جلب بيانات المستخدم مرة واحدة
-                    let userData = null;
-                    if (currentUser) {
-                        try {
-                            const userDoc = await db.collection('users').doc(currentUser.uid).get();
-                            if (userDoc.exists) {
-                                userData = userDoc.data();
-                                console.log('✅ بيانات المستخدم في loadGlobalChat:', userData);
-                            }
-                        } catch (error) {
-                            console.error('خطأ في جلب بيانات المستخدم:', error);
-                        }
-                    }
-                    
-                    const fragment = document.createDocumentFragment();
-                    
-                    // عرض كل رسالة
-                    globalMessages.forEach(message => {
-                        cachedCompetitions[message.id] = message;
-                        
-                        const readMessages = JSON.parse(localStorage.getItem('readMessages')) || [];
-                        if (!readMessages.includes(message.id) && message.type === 'admin_message') {
-                            unreadMessages.push(message.id);
-                        }
-                        
-                        const conversationItem = document.createElement('div');
-                        conversationItem.className = 'conversation-item';
-                        conversationItem.setAttribute('data-id', message.id);
-                        
-                        let avatarContent = '<i class="fas fa-crown" style="color: gold;"></i>';
-                        let senderName = message.adminName || 'مرجان - الإدارة';
-                        
-                        const unreadIndicator = !readMessages.includes(message.id) && message.type === 'admin_message' ? 
-                            '<div class="conversation-unread"></div>' : '';
-                        
-                        let displayPercentage = 0;
-                        if (userData) {
-                            displayPercentage = calculateCompletionPercentage(message.id, userData);
-                        }
-                        const completionPercentage = displayPercentage;
-                        const strokeDashoffset = 145 - (145 * completionPercentage / 100);
-
-                        let imageHtml = '';
-                        if (message.attachment && message.attachment.type.startsWith('image/')) {
-                            imageHtml = `<img src="${message.attachment.url}" style="width: 100%; height: 100%; object-fit: cover; display: block; position: absolute; top: 0; left: 0;">`;
-                        } else {
-                            imageHtml = `
-                                <svg style="width: 100%; height: 100%; position: absolute; top: 0; left: 0; display: block;" viewBox="0 0 800 350" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
-                                    <defs>
-                                        <linearGradient id="sky${message.id}" x1="0%" y1="0%" x2="0%" y2="100%">
-                                            <stop offset="0%" style="stop-color:#1e3c72;stop-opacity:1" />
-                                            <stop offset="100%" style="stop-color:#2a5298;stop-opacity:1" />
-                                        </linearGradient>
-                                        <linearGradient id="mountain${message.id}" x1="0%" y1="0%" x2="0%" y2="100%">
-                                            <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
-                                            <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
-                                        </linearGradient>
-                                    </defs>
-                                    <rect width="800" height="350" fill="url(#sky${message.id})"/>
-                                    <circle cx="700" cy="80" r="40" fill="#ffd700" opacity="0.9"/>
-                                    <path d="M 0 240 Q 200 150, 400 190 T 800 170 L 800 350 L 0 350 Z" fill="#2a4d7c" opacity="0.6"/>
-                                    <path d="M 0 270 Q 150 180, 300 220 T 600 210 T 800 250 L 800 350 L 0 350 Z" fill="url(#mountain${message.id})" opacity="0.8"/>
-                                    <path d="M 0 300 L 200 210 L 350 270 L 500 220 L 650 290 L 800 250 L 800 350 L 0 350 Z" fill="#5a4a9f" opacity="0.9"/>
-                                </svg>
-                            `;
-                        }
-
-                        conversationItem.innerHTML = `
-                            <div style="position: relative; overflow: hidden; border-radius: 20px; height: 200px; width: 100%;">
-                                <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; transform: scale(1); transform-origin: center;">
-                                    ${imageHtml}
-                                </div>
+            try {
+                // ✅ جلب الرسائل من permanent_competitions
+                const permanentCompetitionsPromise = db.collection('permanent_competitions')
+                    .orderBy('timestamp', 'desc')
+                    .get();
+                
+                // ✅ جلب الرسائل الخاصة بالمستخدم (إن وُجد)
+                let userMessagesPromise = Promise.resolve({ empty: true, docs: [] });
+                
+                if (currentUser) {
+                    userMessagesPromise = db.collection('users')
+                        .where('email', '==', currentUser.email)
+                        .limit(1)
+                        .get()
+                        .then(snapshot => {
+                            if (!snapshot.empty) {
+                                const userData = snapshot.docs[0].data();
+                                const chatMessages = userData.chatMessages || [];
                                 
-                                <div style="position: absolute; bottom: 0; right: 20px; padding: 15px; z-index: 2; max-width: 70%;">
-                                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-                                        <div style="width: 45px; height: 45px; position: relative; flex-shrink: 0;">
-                                            <svg viewBox="0 0 60 60" style="transform: rotate(-90deg); width: 100%; height: 100%;">
-                                                <defs>
-                                                    <linearGradient id="grad${message.id}" x1="0%" y1="0%" x2="100%" y2="100%">
-                                                        <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
-                                                        <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
-                                                    </linearGradient>
-                                                </defs>
-                                                <circle cx="30" cy="30" r="23" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="4"></circle>
-                                                <circle cx="30" cy="30" r="23" fill="none" stroke="url(#grad${message.id})" stroke-width="4" stroke-linecap="round" stroke-dasharray="145" stroke-dashoffset="${strokeDashoffset}"></circle>
-                                            </svg>
-                                            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 0.7rem; font-weight: 700; text-shadow: 0 3px 12px rgba(0,0,0,1), 0 0 8px rgba(0,0,0,0.8);">${completionPercentage}%</div>
-                                        </div>
-                                        <div style="flex: 1;">
-                                            <div style="color: white; font-size: 1rem; font-weight: 600; text-shadow: 0 3px 15px rgba(0,0,0,1), 0 0 10px rgba(0,0,0,0.9); margin-bottom: 2px; text-align: right; padding-right: 5px;">${message.title || 'مسابقة جديدة'}</div>
-                                            <div style="color: rgba(255,255,255,0.95); font-size: 0.75rem; text-shadow: 0 2px 10px rgba(0,0,0,1), 0 0 8px rgba(0,0,0,0.8);">نسبة الاكتمال: ${completionPercentage}%</div>
-                                        </div>
-                                    </div>
-                                    
-                                    <p style="color: white; font-size: 0.95rem; line-height: 1.6; margin-bottom: 10px; text-shadow: 0 2px 15px rgba(0,0,0,1), 0 0 10px rgba(0,0,0,0.8); overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">${message.message}</p>
-                                    <div style="color: rgba(255,255,255,0.9); font-size: 0.8rem; text-shadow: 0 2px 10px rgba(0,0,0,1), 0 0 8px rgba(0,0,0,0.8);">${formatTime(message.timestamp?.toDate())}</div>
-                                </div>
-                            </div>
-                            ${unreadIndicator}
-                        `;
-                        
-                        conversationItem.addEventListener('click', (e) => {
-                            e.stopPropagation();
-                            toggleCardExpansion(conversationItem, message);
+                                // تحويل chatMessages إلى صيغة مشابهة لـ snapshot
+                                return {
+                                    empty: chatMessages.length === 0,
+                                    docs: chatMessages.map(msg => ({
+                                        id: msg.id,
+                                        data: () => msg
+                                    }))
+                                };
+                            }
+                            return { empty: true, docs: [] };
+                        })
+                        .catch(error => {
+                            console.error('خطأ في جلب رسائل المستخدم:', error);
+                            return { empty: true, docs: [] };
                         });
-                        
-                        fragment.appendChild(conversationItem);
+                }
+                
+                // ✅ دمج النتائج من المصدرين
+                const [permanentSnapshot, userMessages] = await Promise.all([permanentCompetitionsPromise, userMessagesPromise]);
+                
+                conversationsList.innerHTML = '';
+                globalMessages = [];
+                unreadMessages = [];
+                
+                // معالجة permanent_competitions
+                permanentSnapshot.forEach(doc => {
+                    const docData = doc.data();
+                    const message = {
+                        ...docData,
+                        id: doc.id,
+                        isPermanent: true
+                    };
+                    globalMessages.push(message);
+                });
+                
+                // معالجة chatMessages للمستخدم
+                if (!userMessages.empty) {
+                    userMessages.docs.forEach(doc => {
+                        const message = doc.data();
+                        globalMessages.push({
+                            ...message,
+                            isPermanent: false
+                        });
                     });
-                    
-                    conversationsList.appendChild(fragment);
-                    updateChatBadge();
-                    
-                })
-                .catch(error => {
-                    console.error('Error loading global chat:', error);
+                }
+                
+                // ترتيب الرسائل حسب التاريخ
+                globalMessages.sort((a, b) => {
+                    const timeA = a.timestamp?.toDate ? a.timestamp.toDate() : new Date(a.timestamp);
+                    const timeB = b.timestamp?.toDate ? b.timestamp.toDate() : new Date(b.timestamp);
+                    return timeB - timeA;
+                });
+                
+                if (globalMessages.length === 0) {
                     conversationsList.innerHTML = `
-                        <div style="text-align: center; padding: 20px; color: red;">
-                            <p>خطأ في تحميل المحادثات</p>
+                        <div style="text-align: center; padding: 20px; color: #666;">
+                            <i class="fas fa-comments" style="font-size: 3rem; margin-bottom: 15px; color: #ccc;"></i>
+                            <p>لا توجد رسائل عامة بعد</p>
+                            <p style="font-size: 0.9rem; color: #888;">سيظهر هنا الرسائل العامة من الإدارة</p>
                         </div>
                     `;
-                });
-        }
+                    updateChatBadge();
+                    return;
+                }
+                
+                // جلب بيانات المستخدم مرة واحدة
+                let userData = null;
+                if (currentUser) {
+                    try {
+                        const userDoc = await db.collection('users').doc(currentUser.uid).get();
+                        if (userDoc.exists) {
+                            userData = userDoc.data();
+                            console.log('✅ بيانات المستخدم في loadGlobalChat:', userData);
+                        }
+                    } catch (error) {
+                        console.error('خطأ في جلب بيانات المستخدم:', error);
+                    }
+                }
+                
+                const fragment = document.createDocumentFragment();
+                
+                // استخدام for...of بدلاً من forEach للتعامل مع await
+                for (const message of globalMessages) {
+                    cachedCompetitions[message.id] = message;
+                    
+                    const readMessages = JSON.parse(localStorage.getItem('readMessages')) || [];
+                    if (!readMessages.includes(message.id) && message.type === 'admin_message') {
+                        unreadMessages.push(message.id);
+                    }
+                    
+                    const conversationItem = document.createElement('div');
+                    conversationItem.className = 'conversation-item';
+                    conversationItem.setAttribute('data-id', message.id);
+                    
+                    let avatarContent = '<i class="fas fa-crown" style="color: gold;"></i>';
+                    let senderName = message.adminName || 'مرجان - الإدارة';
+                    
+                    const unreadIndicator = !readMessages.includes(message.id) && message.type === 'admin_message' ? 
+                        '<div class="conversation-unread"></div>' : '';
+                    
+                    let displayPercentage = 0;
+                    if (userData) {
+                        // ✅ إضافة await هنا
+                        displayPercentage = await calculateCompletionPercentage(message.id, userData);
+                    }
+                    const completionPercentage = displayPercentage;
+                    const strokeDashoffset = 145 - (145 * completionPercentage / 100);
+
+                    let imageHtml = '';
+                    if (message.attachment && message.attachment.type.startsWith('image/')) {
+                        imageHtml = `<img src="${message.attachment.url}" style="width: 100%; height: 100%; object-fit: cover; display: block; position: absolute; top: 0; left: 0;">`;
+                    } else {
+                        imageHtml = `
+                            <svg style="width: 100%; height: 100%; position: absolute; top: 0; left: 0; display: block;" viewBox="0 0 800 350" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+                                <defs>
+                                    <linearGradient id="sky${message.id}" x1="0%" y1="0%" x2="0%" y2="100%">
+                                        <stop offset="0%" style="stop-color:#1e3c72;stop-opacity:1" />
+                                        <stop offset="100%" style="stop-color:#2a5298;stop-opacity:1" />
+                                    </linearGradient>
+                                    <linearGradient id="mountain${message.id}" x1="0%" y1="0%" x2="0%" y2="100%">
+                                        <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+                                        <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+                                    </linearGradient>
+                                </defs>
+                                <rect width="800" height="350" fill="url(#sky${message.id})"/>
+                                <circle cx="700" cy="80" r="40" fill="#ffd700" opacity="0.9"/>
+                                <path d="M 0 240 Q 200 150, 400 190 T 800 170 L 800 350 L 0 350 Z" fill="#2a4d7c" opacity="0.6"/>
+                                <path d="M 0 270 Q 150 180, 300 220 T 600 210 T 800 250 L 800 350 L 0 350 Z" fill="url(#mountain${message.id})" opacity="0.8"/>
+                                <path d="M 0 300 L 200 210 L 350 270 L 500 220 L 650 290 L 800 250 L 800 350 L 0 350 Z" fill="#5a4a9f" opacity="0.9"/>
+                            </svg>
+                        `;
+                    }
+
+                    conversationItem.innerHTML = `
+                        <div style="position: relative; overflow: hidden; border-radius: 20px; height: 200px; width: 100%;">
+                            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; transform: scale(1); transform-origin: center;">
+                                ${imageHtml}
+                            </div>
+                            
+                            <div style="position: absolute; bottom: 0; right: 20px; padding: 15px; z-index: 2; max-width: 70%;">
+                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                    <div style="width: 45px; height: 45px; position: relative; flex-shrink: 0;">
+                                        <svg viewBox="0 0 60 60" style="transform: rotate(-90deg); width: 100%; height: 100%;">
+                                            <defs>
+                                                <linearGradient id="grad${message.id}" x1="0%" y1="0%" x2="100%" y2="100%">
+                                                    <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+                                                    <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+                                                </linearGradient>
+                                            </defs>
+                                            <circle cx="30" cy="30" r="23" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="4"></circle>
+                                            <circle cx="30" cy="30" r="23" fill="none" stroke="url(#grad${message.id})" stroke-width="4" stroke-linecap="round" stroke-dasharray="145" stroke-dashoffset="${strokeDashoffset}"></circle>
+                                        </svg>
+                                        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 0.7rem; font-weight: 700; text-shadow: 0 3px 12px rgba(0,0,0,1), 0 0 8px rgba(0,0,0,0.8);">${completionPercentage}%</div>
+                                    </div>
+                                    <div style="flex: 1;">
+                                        <div style="color: white; font-size: 1rem; font-weight: 600; text-shadow: 0 3px 15px rgba(0,0,0,1), 0 0 10px rgba(0,0,0,0.9); margin-bottom: 2px; text-align: right; padding-right: 5px;">${message.title || 'مسابقة جديدة'}</div>
+                                        <div style="color: rgba(255,255,255,0.95); font-size: 0.75rem; text-shadow: 0 2px 10px rgba(0,0,0,1), 0 0 8px rgba(0,0,0,0.8);">نسبة الاكتمال: ${completionPercentage}%</div>
+                                    </div>
+                                </div>
+                                
+                                <p style="color: white; font-size: 0.95rem; line-height: 1.6; margin-bottom: 10px; text-shadow: 0 2px 15px rgba(0,0,0,1), 0 0 10px rgba(0,0,0,0.8); overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">${message.message}</p>
+                                <div style="color: rgba(255,255,255,0.9); font-size: 0.8rem; text-shadow: 0 2px 10px rgba(0,0,0,1), 0 0 8px rgba(0,0,0,0.8);">${formatTime(message.timestamp?.toDate())}</div>
+                            </div>
+                        </div>
+                        ${unreadIndicator}
+                    `;
+                    
+                    conversationItem.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        toggleCardExpansion(conversationItem, message);
+                    });
+                    
+                    fragment.appendChild(conversationItem);
+                }
+                
+                conversationsList.appendChild(fragment);
+                updateChatBadge();
+                
+            } catch (error) {
+                console.error('Error loading global chat:', error);
+                conversationsList.innerHTML = `
+                    <div style="text-align: center; padding: 20px; color: red;">
+                        <p>خطأ في تحميل المحادثات</p>
+                    </div>
+                `;
+            }
+        } // ← هذا الإغلاق للدالة loadGlobalChat
         // إغلاق جميع البطاقات الموسعة
         function closeAllExpandedCards() {
             document.querySelectorAll('.conversation-item.expanded').forEach(card => {
@@ -2404,7 +2424,7 @@
                         const userDoc = await db.collection('users').doc(currentUser.uid).get();
                         if (userDoc.exists) {
                             const userData = userDoc.data();
-                            displayPercentage = calculateCompletionPercentage(message.id, userData);
+                            displayPercentage = await calculateCompletionPercentage(message.id, userData);
                             hasPublishedAd = userData.hasPublishedAd || false;
                             console.log('✅ نسبة الاكتمال:', displayPercentage);
                             console.log('✅ هل نشر إعلان:', hasPublishedAd);
@@ -2771,7 +2791,7 @@
                 const competitionData = userData.competitions?.[competitionId];
                 
                 if (!competitionData) return;
-                const actualPercentage = calculateCompletionPercentage(competitionId, userData);
+                const actualPercentage = await calculateCompletionPercentage(competitionId, userData);
                 if (actualPercentage >= 100 && !competitionData.rewardClaimed) {
                     const rewardPoints = competitionDoc.data().rewardPoints || 0;
                     
@@ -3030,7 +3050,6 @@
     </script>
 </body>
 </html>
-
 
 
 
