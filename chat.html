@@ -2362,35 +2362,23 @@
                 }
                 
                 // الحصول على نسبة الاكتمال من بيانات المستخدم
-                // الحصول على نسبة الاكتمال من بيانات المستخدم - محسوبة حديثاً
                 let displayPercentage = 0;
+                let hasPublishedAd = false; // ✅ متغير جديد للتحقق من نشر إعلان
+                
                 if (currentUser) {
                     try {
                         const userDoc = await db.collection('users').doc(currentUser.uid).get();
                         if (userDoc.exists) {
                             const userData = userDoc.data();
-                            hasPublishedAd = userData.hasPublishedAd || false;
-                            
-                            // ✅ إعادة حساب النسبة بناءً على الإحالات الناجحة الحالية
-                            const competitionData = userData.competitions?.[message.id];
-                            if (competitionData) {
-                                const successfulRefs = competitionData.successfulReferrals || [];
-                                const successCount = successfulRefs.filter(r => r.status === 'success').length;
-                                const totalRequired = message.requiredReferrals || 10;
-                                displayPercentage = Math.min(Math.round((successCount / totalRequired) * 100), 100);
-                                
-                                console.log('✅ إعادة حساب النسبة:', {
-                                    successCount,
-                                    totalRequired,
-                                    displayPercentage
-                                });
-                            }
+                            displayPercentage = userData.competitions?.[message.id]?.percentage || 0;
+                            hasPublishedAd = userData.hasPublishedAd || false; // ✅ التحقق من نشر إعلان
+                            console.log('✅ نسبة الاكتمال:', displayPercentage);
+                            console.log('✅ هل نشر إعلان:', hasPublishedAd);
                         }
                     } catch (error) {
                         console.error('خطأ في جلب نسبة الاكتمال:', error);
                     }
                 }
-                
                 
                 const completionPercentage = displayPercentage;
                 const strokeDashoffset = 145 - (145 * completionPercentage / 100);
@@ -2766,19 +2754,28 @@
                     console.log(`💰 الرصيد الحالي: ${currentBalance}`);
                     console.log(`🎁 نقاط المكافأة: ${rewardPoints}`);
                     console.log(`✨ الرصيد الجديد: ${newBalance}`);
-                    await db.collection('users').doc(userDocId).update({
-                    currentBalance: newBalance,
+                   await db.collection('users').doc(userDocId).update({
+                        currentBalance: newBalance,
                         [`competitions.${competitionId}.rewardClaimed`]: true,
                         [`competitions.${competitionId}.rewardClaimedAt`]: new Date().toISOString(),
-                        [`competitions.${competitionId}.percentage`]: 0,  // ✅ إعادة النسبة للصفر
-                        [`competitions.${competitionId}.successfulReferrals`]: []  // ✅ مسح قائمة الإحالات
+                        [`competitions.${competitionId}.percentage`]: 0,
+                        [`competitions.${competitionId}.successfulReferrals`]: []
                     });
 
-                    console.log(`🔄 تم إعادة تعيين نسبة الاكتمال للصفر للبدء من جديد!`);
+                    console.log(`✅ تم إضافة ${rewardPoints} نقطة للمستخدم!`);
+                    alert(`🎉 مبروك! لقد أكملت المسابقة وحصلت على ${rewardPoints} نقطة ذهبية!`);
 
-                    // ✅ إعادة تحميل البطاقة لإظهار النسبة الجديدة
-                    setTimeout(() => {
-                        location.reload(); // أو يمكن تحديث العرض مباشرة بدون إعادة تحميل
+                    // ✅ بعد ثانيتين: إعادة تعيين rewardClaimed إلى false للسماح بجولة جديدة
+                    setTimeout(async () => {
+                        try {
+                            await db.collection('users').doc(userDocId).update({
+                                [`competitions.${competitionId}.rewardClaimed`]: false
+                            });
+                            console.log('🔄 تم إعادة تعيين rewardClaimed - جاهز لجولة جديدة!');
+                            location.reload();
+                        } catch (error) {
+                            console.error('❌ خطأ في إعادة تعيين rewardClaimed:', error);
+                        }
                     }, 2000);
                     
                     console.log(`✅ تم إضافة ${rewardPoints} نقطة للمستخدم!`);
