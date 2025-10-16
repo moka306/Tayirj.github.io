@@ -2642,18 +2642,8 @@
                 return;
             }
             
-            // ✅ إنشاء رسالة دعوة جذابة مع الرابط الكامل (مع uid)
-            const invitationMessage = `🎁 *مرحباً بك في مسابقة Tayirj!*
-
-        🌟 انضم الآن واستمتع بفرصة الفوز بجوائز قيمة!
-
-        👇 اضغط على الرابط للمشاركة:
-        ${referralLink}
-
-        💰 *مكافآت حصرية بانتظارك!*`;
-
-            // فتح واتساب مع رسالة الدعوة والرابط الكامل
-            const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(invitationMessage)}`;
+            // فتح واتساب مباشرة بدون رسالة نصية
+            const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(referralLink)}`;
             window.open(whatsappUrl, '_blank');
             
             const btn = event.target.closest('.copy-link-btn');
