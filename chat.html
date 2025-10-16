@@ -2771,8 +2771,8 @@
                 const competitionData = userData.competitions?.[competitionId];
                 
                 if (!competitionData) return;
-                
-                if (competitionData.percentage >= 100 && !competitionData.rewardClaimed) {
+                const actualPercentage = calculateCompletionPercentage(competitionId, userData);
+                if (actualPercentage >= 100 && !competitionData.rewardClaimed) {
                     const rewardPoints = competitionDoc.data().rewardPoints || 0;
                     
                     if (rewardPoints <= 0) {
